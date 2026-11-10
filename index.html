@@ -1,0 +1,2596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MUTAGEN SHIFT — Cards of Fate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        obsidian: '#0d0e12',
+        obsidian2: '#12141b',
+        panel: '#171a24',
+        cyan1: '#3ef0ff',
+        magenta1: '#ff3ef0',
+        gold1: '#ffcc4d',
+      },
+      fontFamily: {
+        display: ['Orbitron', 'sans-serif'],
+        body: ['Rajdhani', 'sans-serif'],
+      }
+    }
+  }
+}
+</script>
+<style>
+  :root{
+    --cy:#3ef0ff; --mg:#ff3ef0; --gd:#ffcc4d;
+  }
+  html,body,#root{height:100%;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 15% 10%, rgba(62,240,255,.10), transparent 42%),
+      radial-gradient(circle at 85% 88%, rgba(255,62,240,.10), transparent 45%),
+      radial-gradient(circle at 50% 50%, rgba(255,204,77,.05), transparent 60%),
+      #0d0e12;
+    color:#e8ecf5;
+    font-family:'Rajdhani',sans-serif;
+    overflow-x:hidden;
+  }
+  ::-webkit-scrollbar{width:9px;height:9px}
+  ::-webkit-scrollbar-track{background:#0d0e12}
+  ::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#1f8fa8,#7a1f8f);border-radius:9px}
+
+  .font-display{font-family:'Orbitron',sans-serif;letter-spacing:.06em}
+
+  /* ===== Ambient particles ===== */
+  .particles{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+  .particle{
+    position:absolute;width:2px;height:2px;border-radius:50%;
+    background:var(--cy);opacity:0;
+    animation:floatUp linear infinite;
+    box-shadow:0 0 6px currentColor;
+  }
+  @keyframes floatUp{
+    0%{transform:translateY(0) scale(.6);opacity:0}
+    12%{opacity:.75}
+    85%{opacity:.35}
+    100%{transform:translateY(-105vh) scale(1.2);opacity:0}
+  }
+
+  /* ===== Glass panels ===== */
+  .glass{
+    background:linear-gradient(160deg, rgba(30,36,52,.72), rgba(14,16,22,.86));
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    border:1px solid rgba(120,180,255,.13);
+    box-shadow:0 10px 40px -12px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.05);
+  }
+  .glass-hi{
+    background:linear-gradient(160deg, rgba(42,52,74,.85), rgba(16,18,26,.92));
+    border:1px solid rgba(120,180,255,.22);
+  }
+
+  /* ===== Neon buttons ===== */
+  .btn-neon{
+    position:relative;overflow:hidden;
+    transition:transform .18s cubic-bezier(.2,1.5,.4,1), box-shadow .25s, filter .25s;
+    will-change:transform;
+  }
+  .btn-neon:hover{transform:translateY(-2px) scale(1.025);filter:brightness(1.12)}
+  .btn-neon:active{transform:translateY(1px) scale(.97)}
+  .btn-neon:disabled{opacity:.38;filter:grayscale(.6);transform:none;cursor:not-allowed}
+  .btn-neon::after{
+    content:'';position:absolute;inset:0;
+    background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.28) 48%,transparent 62%);
+    transform:translateX(-130%);transition:transform .7s ease;
+  }
+  .btn-neon:hover::after{transform:translateX(130%)}
+
+  /* ===== Card ===== */
+  .tcg-card{
+    transform-style:preserve-3d;
+    transition:transform .22s cubic-bezier(.2,1.2,.3,1), box-shadow .25s;
+    will-change:transform;
+  }
+  .tcg-card::before{
+    content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+    background:radial-gradient(circle at var(--mx,50%) var(--my,50%), rgba(255,255,255,.22), transparent 55%);
+    opacity:0;transition:opacity .25s;
+  }
+  .tcg-card:hover::before{opacity:1}
+
+  @keyframes popIn{
+    0%{transform:scale(.5) rotate(-8deg);opacity:0}
+    60%{transform:scale(1.08) rotate(2deg);opacity:1}
+    100%{transform:scale(1) rotate(0);opacity:1}
+  }
+  .pop-in{animation:popIn .38s cubic-bezier(.2,1.4,.4,1) both}
+
+  @keyframes fuseBurst{
+    0%{transform:scale(1);filter:brightness(1)}
+    35%{transform:scale(.78);filter:brightness(2.4)}
+    70%{transform:scale(1.5);filter:brightness(3)}
+    100%{transform:scale(1);filter:brightness(1)}
+  }
+  .fuse-burst{animation:fuseBurst .62s ease-out}
+
+  @keyframes shake{
+    0%,100%{transform:translate(0,0)}
+    15%{transform:translate(-7px,3px) rotate(-.5deg)}
+    30%{transform:translate(6px,-4px) rotate(.5deg)}
+    45%{transform:translate(-5px,-2px)}
+    60%{transform:translate(4px,3px)}
+    80%{transform:translate(-2px,1px)}
+  }
+  .shake{animation:shake .42s ease-in-out}
+
+  @keyframes flashOverlay{
+    0%{opacity:0}20%{opacity:.9}100%{opacity:0}
+  }
+  .flash-overlay{animation:flashOverlay .8s ease-out forwards}
+
+  @keyframes reelTick{
+    0%{transform:translateY(-14px);opacity:0}
+    100%{transform:translateY(0);opacity:1}
+  }
+  .reel-tick{animation:reelTick .06s linear}
+
+  @keyframes glowPulse{
+    0%,100%{box-shadow:0 0 12px rgba(62,240,255,.35), inset 0 0 12px rgba(62,240,255,.08)}
+    50%{box-shadow:0 0 26px rgba(62,240,255,.7), inset 0 0 20px rgba(62,240,255,.18)}
+  }
+  .glow-pulse{animation:glowPulse 2.2s ease-in-out infinite}
+
+  @keyframes floatY{
+    0%,100%{transform:translateY(0)}
+    50%{transform:translateY(-7px)}
+  }
+  .float-y{animation:floatY 3.4s ease-in-out infinite}
+
+  @keyframes cardReveal{
+    0%{transform:rotateY(180deg) scale(.86);opacity:.4}
+    100%{transform:rotateY(0) scale(1);opacity:1}
+  }
+  .card-reveal{animation:cardReveal .5s cubic-bezier(.2,1.2,.3,1) both}
+
+  @keyframes rainbowSpin{
+    0%{filter:hue-rotate(0)}
+    100%{filter:hue-rotate(360deg)}
+  }
+  .rainbow{animation:rainbowSpin 2.2s linear infinite}
+
+  @keyframes waveSlide{
+    0%{transform:scaleX(0);opacity:1}
+    100%{transform:scaleX(1);opacity:0}
+  }
+
+  .grid-cell{
+    transition:transform .16s cubic-bezier(.2,1.5,.4,1), box-shadow .2s, border-color .2s, background .2s;
+  }
+  .grid-cell:hover{transform:scale(1.035)}
+
+  .tab-active{
+    background:linear-gradient(180deg, rgba(62,240,255,.18), rgba(62,240,255,.04));
+    box-shadow:0 0 0 1px rgba(62,240,255,.5), 0 0 22px -4px rgba(62,240,255,.6);
+    color:#9ff7ff;
+  }
+
+  .clip-corner{
+    clip-path:polygon(0 10px, 10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+  }
+  .no-scrollbar::-webkit-scrollbar{display:none}
+  .no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
+
+  .text-glow-cy{text-shadow:0 0 14px rgba(62,240,255,.75)}
+  .text-glow-mg{text-shadow:0 0 14px rgba(255,62,240,.75)}
+  .text-glow-gd{text-shadow:0 0 14px rgba(255,204,77,.75)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+/* ============================================================================
+   ICONS
+============================================================================ */
+const P = {
+  zap: "M13 2L4 14h6l-1 8 9-12h-6l1-8z",
+  heart: "M20.8 5.6a5 5 0 00-7.1 0L12 7.3l-1.7-1.7a5 5 0 10-7.1 7.1L12 21.5l8.8-8.8a5 5 0 000-7.1z",
+  flame: "M12 2c1.5 4.6 5 6 5 10a5 5 0 01-10 0c0-2.6 1.6-3.6 2-6 1 1.6 2 1.6 3-4z",
+  snow: "M12 2v20M2 12h20M5 5l14 14M19 5L5 19",
+  drop: "M12 2.7l5 6.3a6.5 6.5 0 11-10 0z",
+  prism: "M12 3l8 14H4l8-14zM12 3v14",
+  shield: "M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z",
+  sparkles: "M12 3l1.8 4.5L18 9l-4.2 1.5L12 15l-1.8-4.5L6 9l4.2-1.5L12 3zM19 14l.9 2.1L22 17l-2.1.9L19 20l-.9-2.1L16 17l2.1-.9L19 14z",
+  refresh: "M20.5 12a8.5 8.5 0 11-2.7-6.2M20.5 3.5v5.5h-5.5",
+  play: "M6 3l15 9-15 9V3z",
+  x: "M18 6L6 18M6 6l12 12",
+  plus: "M12 5v14M5 12h14",
+  minus: "M5 12h14",
+  lock: "M6 11h12v10H6zM9 11V7a3 3 0 016 0v4",
+  dna: "M6 3c0 8 12 8 12 16M18 3c0 8-12 8-12 16M8 7h8M8 17h8",
+  flask: "M9 3h6M10 3v6.5L4 20h16L14 9.5V3",
+  map: "M9 3L3 5v16l6-2 6 2 6-2V3l-6 2-6-2zM9 3v16M15 5v16",
+  book: "M4 4h6a3 3 0 013 3v14a3 3 0 00-3-3H4V4zM20 4h-6a3 3 0 00-3 3v14a3 3 0 013-3h6V4z",
+  trophy: "M8 3h8v5a4 4 0 01-8 0V3zM8 5H4v2a4 4 0 004 4M16 5h4v2a4 4 0 01-4 4M10 17h4M9 21h6M12 14v3",
+  skull: "M12 3a8 8 0 00-8 8v4l2 2v3h3l1-2h4l1 2h3v-3l2-2v-4a8 8 0 00-8-8zM9 12h.01M15 12h.01",
+  chevron: "M9 6l6 6-6 6",
+  check: "M4 12l5 5L20 6",
+  grid: "M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z",
+  target: "M12 3a9 9 0 100 18 9 9 0 000-18zM12 8a4 4 0 100 8 4 4 0 000-8z",
+  coins: "M12 3a9 4 0 100 8 9 4 0 000-8zM3 11v5c0 2.2 4 4 9 4s9-1.8 9-4v-5",
+  swords: "M17 3l4 4-9 9-4-4 9-9zM3 17l4 4M4 21l3-3M14.5 5.5l4 4",
+  eye: "M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7zM12 9a3 3 0 100 6 3 3 0 000-6z",
+  info: "M12 3a9 9 0 100 18 9 9 0 000-18zM12 11v6M12 8h.01",
+  arrowRight: "M5 12h14M13 6l6 6-6 6",
+};
+function Icon({ name, size = 16, className = "", strokeWidth = 1.9, fill = "none" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor"
+      strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d={P[name] || P.info} />
+    </svg>
+  );
+}
+
+/* ============================================================================
+   GAME DATA
+============================================================================ */
+const ELEMENTS = {
+  Ember: { color: '#ff7a45', dim: '#5a2410', icon: 'flame', beats: 'Frost' },
+  Volt:  { color: '#3ef0ff', dim: '#0d3a44', icon: 'zap',   beats: 'Venom' },
+  Venom: { color: '#8dff5c', dim: '#22400f', icon: 'drop',  beats: 'Ember' },
+  Frost: { color: '#8fb8ff', dim: '#1d2c55', icon: 'snow',  beats: 'Volt' },
+  Prism: { color: '#f0abfc', dim: '#42134d', icon: 'prism', beats: null },
+};
+const ELEMENT_LIST = ['Ember', 'Volt', 'Venom', 'Frost', 'Prism'];
+const ELEM_ICON = (e) => ELEMENTS[e]?.icon || 'prism';
+const ELEM_COLOR = (e) => ELEMENTS[e]?.color || '#888';
+
+const RARITY = {
+  Common:    { color: '#9aa7bd', ring: 'rgba(154,167,189,.55)' },
+  Uncommon:  { color: '#5ce1a8', ring: 'rgba(92,225,168,.6)' },
+  Rare:      { color: '#5aa9ff', ring: 'rgba(90,169,255,.65)' },
+  Legendary: { color: '#ffcc4d', ring: 'rgba(255,204,77,.8)' },
+};
+
+const CARD_POOL = [
+  // ── EMBER ──
+  { id:'cinder-imp',   name:'Cinder Imp',   cost:1, element:'Ember', type:'unit', atk:2, hp:3, rarity:'Common',    flavor:'It eats kindling. And fingers.' },
+  { id:'slag-brute',   name:'Slag Brute',   cost:2, element:'Ember', type:'unit', atk:3, hp:5, rarity:'Common',    flavor:'Slow, but arrives on fire.' },
+  { id:'ember-warden', name:'Ember Warden', cost:3, element:'Ember', type:'unit', atk:5, hp:6, rarity:'Uncommon',  flavor:'Guardian of the last warm place.' },
+  { id:'magma-tyrant', name:'Magma Tyrant', cost:5, element:'Ember', type:'unit', atk:7, hp:8, armor:1, rarity:'Legendary', flavor:'The floor remembers it.' },
+  // ── VOLT ──
+  { id:'static-sprite',name:'Static Sprite',cost:1, element:'Volt',  type:'unit', atk:2, hp:3, rarity:'Common',    flavor:'Crackles when nervous. Always nervous.' },
+  { id:'arc-runner',   name:'Arc Runner',   cost:2, element:'Volt',  type:'unit', atk:4, hp:4, rarity:'Common',    flavor:'Fastest thing in the grid.' },
+  { id:'volt-sentinel',name:'Volt Sentinel',cost:3, element:'Volt',  type:'unit', atk:4, hp:6, armor:1, rarity:'Uncommon', flavor:'Holds the lane. Holds the charge.' },
+  { id:'storm-coil',   name:'Storm Coil',   cost:4, element:'Volt',  type:'unit', atk:5, hp:5, rarity:'Rare',      flavor:'Wound tight with a thunderstorm.' },
+  // ── VENOM ──
+  { id:'spore-cadet',  name:'Spore Cadet',  cost:1, element:'Venom', type:'unit', atk:2, hp:3, rarity:'Common',    flavor:'Coughs politely before melting you.' },
+  { id:'mire-stalker', name:'Mire Stalker', cost:2, element:'Venom', type:'unit', atk:3, hp:5, rarity:'Common',    flavor:'The swamp walks.' },
+  { id:'blight-mother',name:'Blight Mother',cost:4, element:'Venom', type:'unit', atk:4, hp:7, rarity:'Rare',      flavor:'Every spore is one of her children.' },
+  // ── FROST ──
+  { id:'rime-pup',     name:'Rime Pup',     cost:1, element:'Frost', type:'unit', atk:2, hp:3, rarity:'Common',    flavor:'Yaps. Then freezes.' },
+  { id:'glacier-guard',name:'Glacier Guard',cost:2, element:'Frost', type:'unit', atk:2, hp:5, armor:1, rarity:'Common', flavor:'Ten thousand years of standing still.' },
+  { id:'cryo-behemoth',name:'Cryo Behemoth',cost:5, element:'Frost', type:'unit', atk:6, hp:9, armor:2, rarity:'Legendary', flavor:'The ice age, personally.' },
+  // ── PRISM ──
+  { id:'null-prism',   name:'Null Prism',   cost:3, element:'Prism', type:'unit', atk:4, hp:4, rarity:'Rare',      flavor:'It is every colour. It is none.' },
+  { id:'helix-oracle', name:'Helix Oracle', cost:4, element:'Prism', type:'unit', atk:3, hp:8, rarity:'Legendary', flavor:'Reads the Reel before it lands.' },
+  // ── SPELLS ──
+  { id:'phase-shift',  name:'Phase Shift',  cost:1, element:'Prism', type:'spell', rarity:'Common',
+    text:'Move a friendly unit to an adjacent empty cell, or swap it with an adjacent ally. Can trigger a fusion.' },
+  { id:'graft-pulse',  name:'Graft Pulse',  cost:1, element:'Prism', type:'spell', rarity:'Common',
+    text:'Move one mutation from a card in your hand to another card in your hand.' },
+  { id:'flash-lance',  name:'Flash Lance',  cost:2, element:'Prism', type:'spell', rarity:'Common',
+    text:'Deal 4 damage to the first enemy unit in a chosen column.' },
+  // ── QUANTUM ──
+  { id:'paradox-larva',name:'Paradox Larva',cost:2, element:'Prism', type:'quantum', atk:3, hp:3, rarity:'Rare',
+    text:'Quantum — reveals a hidden outcome when deployed.' },
+  { id:'fatecaller-drone',name:'Fatecaller Drone',cost:3, element:'Prism', type:'quantum', atk:5, hp:5, rarity:'Rare',
+    text:'Quantum — reveals a hidden outcome when deployed.' },
+];
+const CARD_BY_ID = Object.fromEntries(CARD_POOL.map(c => [c.id, c]));
+const ALL_CARD_IDS = CARD_POOL.map(c => c.id);
+
+const STANDARD_DECK = [
+  'cinder-imp','cinder-imp','slag-brute','slag-brute','ember-warden',
+  'static-sprite','static-sprite','arc-runner','arc-runner','volt-sentinel',
+  'spore-cadet','mire-stalker','rime-pup','glacier-guard','flash-lance'
+];
+
+const MULT = {
+  'Stable':      { atk: 1,    hp: 1,    label: '×1 / ×1' },
+  'Hardened':    { atk: 1,    hp: 1.25, label: '×1 / ×1.25' },
+  'Sharpened':   { atk: 1.25, hp: 1,    label: '×1.25 / ×1' },
+  'Glass Cannon':{ atk: 1.5,  hp: 0.75, label: '×1.5 / ×0.75' },
+  'Bulwark':     { atk: 0.75, hp: 1.5,  label: '×0.75 / ×1.5' },
+  'Overgrowth':  { atk: 1.5,  hp: 1.5,  label: '×1.5 / ×1.5' },
+};
+const MULT_KEYS = Object.keys(MULT);
+const REEL_EFFECTS = ['Burn','Shock','Corrode','Chill','Leech','Cleave','Plating'];
+const REEL_ELEMENT_WEIGHTS = [['Ember',22],['Volt',22],['Venom',22],['Frost',22],['Prism',12]];
+
+const TIER_PERKS = {
+  Ember: { 2:{ name:'Scorch',    effect:'Burn' },    3:{ name:'Inferno',   effect:'Burn' } },
+  Volt:  { 2:{ name:'Arc',       effect:'Cleave' },  3:{ name:'Overcharge',effect:'Shock' } },
+  Venom: { 2:{ name:'Plague',    effect:'Corrode' }, 3:{ name:'Pandemic',  effect:'Corrode' } },
+  Frost: { 2:{ name:'Rime',      effect:'Chill' },   3:{ name:'Glacial Wall', armor:2 } },
+  Prism: { 2:{ name:'Adaptive',  effect:'Burn' },    3:{ name:'Adaptive',  effect:'Shock' } },
+};
+
+/* ============================================================================
+   UTILITIES
+============================================================================ */
+let UID_COUNTER = 0;
+const uid = () => `u${++UID_COUNTER}`;
+const rnd = n => Math.floor(Math.random() * n);
+const pick = a => a[rnd(a.length)];
+const shuffle = arr => { const b = arr.slice(); for (let i = b.length - 1; i > 0; i--) { const j = rnd(i + 1); [b[i], b[j]] = [b[j], b[i]]; } return b; };
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const energyForRound = r => Math.min(2 + r, 7);
+const roundHalfUp = x => Math.floor(x + 0.5);
+
+function weightedPick(pairs) {
+  const total = pairs.reduce((s, p) => s + p[1], 0);
+  let r = Math.random() * total;
+  for (const [v, w] of pairs) { r -= w; if (r <= 0) return v; }
+  return pairs[pairs.length - 1][0];
+}
+
+function elemMult(att, def) {
+  if (!att || !def || att === 'Prism' || def === 'Prism') return 1;
+  if (ELEMENTS[att]?.beats === def) return 1.25;
+  if (ELEMENTS[def]?.beats === att) return 0.8;
+  return 1;
+}
+
+/* Resolve a hand card (def + optional mutation) into battlefield stats */
+function resolveCard(ci) {
+  const def = ci.def;
+  let atk = def.atk || 0, hp = def.hp || 0, armor = def.armor || 0;
+  let element = def.element;
+  let effect = null, effectStacks = 1;
+  if (ci.mutation) {
+    const m = MULT[ci.mutation.mult] || MULT.Stable;
+    const resonant = ci.mutation.element === def.element;
+    const round = resonant ? Math.ceil : Math.round;
+    atk = round(atk * m.atk);
+    hp = round(hp * m.hp);
+    element = ci.mutation.element;
+    effectStacks = resonant ? 2 : 1;
+    if (ci.mutation.effect === 'Plating') armor += 1;
+    else effect = ci.mutation.effect;
+  }
+  return { atk, hp, armor, element, effect, effectStacks };
+}
+
+function makeUnitFromCard(ci, cellIdx) {
+  const s = resolveCard(ci);
+  return {
+    uid: ci.uid,
+    name: ci.def.name,
+    element: s.element,
+    tier: 1,
+    atk: s.atk,
+    maxHp: s.hp,
+    hp: s.hp,
+    armor: s.armor,
+    effect: s.effect,
+    effectStacks: s.effectStacks,
+    isQuantum: ci.def.type === 'quantum',
+    cellIdx,
+    statuses: { burn: 0, chill: 0, corrode: 0, shock: 0, shockImmune: 0 },
+  };
+}
+
+const cloneUnit = u => u ? { ...u, statuses: { ...u.statuses } } : null;
+const cloneGrid = g => g.map(cloneUnit);
+
+function makeCardInstance(id) {
+  return { uid: uid(), def: CARD_BY_ID[id], mutation: null };
+}
+
+/* ============================================================================
+   FUSION ENGINE
+============================================================================ */
+const compatibleElement = (a, b) => a === b || a === 'Prism' || b === 'Prism';
+
+function tryFusion(grid, startIdx) {
+  const g = grid.slice();
+  const fusions = [];
+  let idx = startIdx;
+  let steps = 0;
+  while (steps < 2) {
+    const cur = g[idx];
+    if (!cur || cur.tier >= 3 || cur.isQuantum) break;
+    const r = Math.floor(idx / 3), c = idx % 3;
+    const neighbours = [[r-1,c],[r+1,c],[r,c-1],[r,c+1]]
+      .filter(([rr,cc]) => rr >= 0 && rr < 3 && cc >= 0 && cc < 3)
+      .map(([rr,cc]) => rr * 3 + cc);
+    const candidates = neighbours.filter(n => {
+      const p = g[n];
+      return p && p.tier === cur.tier && p.tier < 3 && compatibleElement(p.element, cur.element);
+    });
+    if (!candidates.length) break;
+    candidates.sort((a, b) => g[b].hp - g[a].hp);
+    const partnerIdx = candidates[0];
+    const partner = g[partnerIdx];
+    const newTier = cur.tier + 1;
+
+    const newAtk = Math.round(0.65 * (cur.atk + partner.atk));
+    const newHp = Math.round(0.65 * (cur.maxHp + partner.maxHp) + (newTier - 1));
+    const elem = partner.element === 'Prism' ? cur.element : partner.element;
+    const perk = TIER_PERKS[elem]?.[newTier] || TIER_PERKS.Prism[newTier];
+    const keepEffect = cur.effect || partner.effect;
+
+    const fused = {
+      uid: uid(),
+      name: `${partner.name} ✦`,
+      element: elem,
+      tier: newTier,
+      atk: newAtk,
+      maxHp: newHp,
+      hp: newHp,
+      armor: Math.max(cur.armor, partner.armor) + (perk?.armor || 0),
+      effect: keepEffect || perk?.effect || null,
+      effectStacks: Math.max(cur.effectStacks, partner.effectStacks),
+      isQuantum: false,
+      cellIdx: partnerIdx,
+      perkName: perk?.name || '',
+      statuses: { burn: 0, chill: 0, corrode: 0, shock: 0, shockImmune: 0 },
+    };
+    fusions.push({ from: [cur.uid, partner.uid], to: fused, cell: partnerIdx, perk: perk?.name });
+    g[partnerIdx] = fused;
+    g[idx] = null;
+    idx = partnerIdx;
+    steps++;
+  }
+  return { grid: g, fusions };
+}
+
+/* ============================================================================
+   REEL
+============================================================================ */
+function rollReel(stableStreak) {
+  const element = weightedPick(REEL_ELEMENT_WEIGHTS);
+  const effect = pick(REEL_EFFECTS);
+  let mult = pick(MULT_KEYS);
+  if (stableStreak >= 2 && mult === 'Stable') {
+    const alt = MULT_KEYS.filter(k => k !== 'Stable');
+    mult = pick(alt);
+  }
+  return { element, effect, mult };
+}
+
+/* ============================================================================
+   CLASH RESOLUTION
+============================================================================ */
+function findTargetIndex(grid, col) {
+  for (let r = 0; r < 3; r++) {
+    const i = r * 3 + col;
+    if (grid[i] && grid[i].hp > 0) return i;
+  }
+  return -1;
+}
+
+function effectiveArmor(u) {
+  if (!u) return 0;
+  return Math.max(-2, u.armor - u.statuses.corrode);
+}
+
+function computeStrikeDamage(attacker, defender) {
+  const atk = Math.max(1, attacker.atk - attacker.statuses.chill);
+  if (!defender) return { core: Math.max(1, roundHalfUp(atk * 1)), raw: atk };
+  const mult = elemMult(attacker.element, defender.element);
+  const dmg = Math.max(1, roundHalfUp(atk * mult) - effectiveArmor(defender));
+  return { unit: dmg, mult, raw: atk };
+}
+
+function applyOnHit(attacker, defender, log, side) {
+  if (!attacker.effect || !defender) return;
+  const st = attacker.effectStacks || 1;
+  switch (attacker.effect) {
+    case 'Burn':
+      defender.statuses.burn = Math.max(defender.statuses.burn, 1 + st);
+      log.push(`${attacker.name} ignites ${defender.name} (Burn ${1 + st}).`);
+      break;
+    case 'Shock':
+      if (defender.statuses.shockImmune <= 0) {
+        defender.statuses.shock = 1;
+        log.push(`${attacker.name} shocks ${defender.name} — it will skip its next strike.`);
+      }
+      break;
+    case 'Corrode':
+      defender.statuses.corrode += st;
+      log.push(`${attacker.name} corrodes ${defender.name} (-${st} Armor).`);
+      break;
+    case 'Chill':
+      defender.statuses.chill = Math.max(defender.statuses.chill, 1 + st);
+      log.push(`${attacker.name} chills ${defender.name} (-${1 + st} ATK).`);
+      break;
+    case 'Cleave':
+      break;
+    default: break;
+  }
+}
+
+function resolveClash(state) {
+  const pGrid = cloneGrid(state.playerGrid);
+  const eGrid = cloneGrid(state.enemyGrid);
+  let pCore = state.playerCore;
+  let eCore = state.enemyCore;
+  const log = [];
+  const floaters = [];
+  const overload = state.round >= 7 ? 2 : 0;
+  let leechHealP = 0, leechHealE = 0;
+
+  for (let wave = 0; wave < 3; wave++) {
+    const waveName = ['Front', 'Mid', 'Back'][wave];
+    const pStrikers = [], eStrikers = [];
+    for (let c = 0; c < 3; c++) {
+      const p = pGrid[wave * 3 + c];
+      const e = eGrid[wave * 3 + c];
+      if (p && p.hp > 0) pStrikers.push({ col: c, unit: p });
+      if (e && e.hp > 0) eStrikers.push({ col: c, unit: e });
+    }
+    if (!pStrikers.length && !eStrikers.length) continue;
+
+    const strikes = []; // {from:'p'|'e', attacker, targetIdx|-1, damage, isCore}
+
+    for (const s of pStrikers) {
+      const a = s.unit;
+      if (a.statuses.shock > 0) { a.statuses.shock = 0; a.statuses.shockImmune = 2; log.push(`${a.name} is shocked — strike skipped.`); continue; }
+      const tgtIdx = findTargetIndex(eGrid, s.col);
+      const d = computeStrikeDamage(a, tgtIdx >= 0 ? eGrid[tgtIdx] : null);
+      strikes.push({ from: 'p', attacker: a, targetIdx: tgtIdx, damage: tgtIdx >= 0 ? d.unit : d.core + overload, isCore: tgtIdx < 0, col: s.col });
+    }
+    for (const s of eStrikers) {
+      const a = s.unit;
+      if (a.statuses.shock > 0) { a.statuses.shock = 0; a.statuses.shockImmune = 2; log.push(`${a.name} is shocked — strike skipped.`); continue; }
+      const tgtIdx = findTargetIndex(pGrid, s.col);
+      const d = computeStrikeDamage(a, tgtIdx >= 0 ? pGrid[tgtIdx] : null);
+      strikes.push({ from: 'e', attacker: a, targetIdx: tgtIdx, damage: tgtIdx >= 0 ? d.unit : d.core + overload, isCore: tgtIdx < 0, col: s.col });
+    }
+
+    // apply damage simultaneously
+    for (const st of strikes) {
+      if (st.isCore) {
+        if (st.from === 'p') { eCore = Math.max(0, eCore - st.damage); floaters.push({ side: 'e', amt: st.damage, core: true }); log.push(`⚔ ${st.attacker.name} hits the ENEMY CORE for ${st.damage}.`); }
+        else { pCore = Math.max(0, pCore - st.damage); floaters.push({ side: 'p', amt: st.damage, core: true }); log.push(`💥 ${st.attacker.name} hits YOUR CORE for ${st.damage}.`); }
+      } else {
+        const grid = st.from === 'p' ? eGrid : pGrid;
+        const tgt = grid[st.targetIdx];
+        if (!tgt) continue;
+        tgt.hp -= st.damage;
+        floaters.push({ side: st.from === 'p' ? 'e' : 'p', idx: st.targetIdx, amt: st.damage });
+        log.push(`${st.attacker.name} strikes ${tgt.name} for ${st.damage}.`);
+        if (tgt.hp <= 0) log.push(`☠ ${tgt.name} is destroyed.`);
+        applyOnHit(st.attacker, tgt, log, st.from);
+        if (st.attacker.effect === 'Leech') {
+          if (st.from === 'p') leechHealP++; else leechHealE++;
+        }
+        // Cleave
+        if (st.attacker.effect === 'Cleave') {
+          for (const nc of [st.col - 1, st.col + 1]) {
+            if (nc < 0 || nc > 2) continue;
+            const ni = findTargetIndex(grid, nc);
+            if (ni >= 0) {
+              const splash = Math.max(1, Math.floor(st.damage * 0.5));
+              grid[ni].hp -= splash;
+              log.push(`${st.attacker.name}'s Cleave splashes ${grid[ni].name} for ${splash}.`);
+              if (grid[ni].hp <= 0) log.push(`☠ ${grid[ni].name} is destroyed.`);
+            }
+            break;
+          }
+        }
+      }
+    }
+    // cleanup
+    for (let i = 0; i < 9; i++) { if (pGrid[i] && pGrid[i].hp <= 0) pGrid[i] = null; if (eGrid[i] && eGrid[i].hp <= 0) eGrid[i] = null; }
+    log.push(`— ${waveName} row resolved —`);
+  }
+
+  if (leechHealP) { pCore = Math.min(20, pCore + leechHealP); log.push(`Leech restores ${leechHealP} to your Core.`); }
+  if (leechHealE) { eCore = Math.min(20, eCore + leechHealE); log.push(`Enemy Leech restores ${leechHealE} to their Core.`); }
+
+  // decay statuses
+  const decay = u => { if (!u) return u; if (u.statuses.chill > 0) u.statuses.chill--; if (u.statuses.shockImmune > 0) u.statuses.shockImmune--; return u; };
+  for (let i = 0; i < 9; i++) { decay(pGrid[i]); decay(eGrid[i]); }
+
+  return { playerGrid: pGrid, enemyGrid: eGrid, playerCore: clamp(pCore, 0, 20), enemyCore: clamp(eCore, 0, 20), clashLog: log, floaters };
+}
+
+/* ============================================================================
+   AI
+============================================================================ */
+function aiChooseCell(grid, card) {
+  const empty = [];
+  for (let i = 0; i < 9; i++) if (!grid[i]) empty.push(i);
+  if (!empty.length) return -1;
+  // prefer cell adjacent to a same-element same-tier ally (for fusion)
+  const scored = empty.map(i => {
+    const r = Math.floor(i / 3), c = i % 3;
+    let score = 0;
+    const neigh = [[r-1,c],[r+1,c],[r,c-1],[r,c+1]]
+      .filter(([rr,cc]) => rr>=0&&rr<3&&cc>=0&&cc<3).map(([rr,cc]) => rr*3+cc);
+    for (const n of neigh) {
+      const u = grid[n];
+      if (u && u.tier === 1 && compatibleElement(u.element, card.element)) score += 30;
+      if (u && u.tier === 2 && compatibleElement(u.element, card.element)) score += 12;
+    }
+    if (r === 0) score += 8;      // front row pressure
+    if (r === 1) score += 4;
+    score += (2 - c === 0 ? 2 : 0);
+    return { i, score };
+  });
+  scored.sort((a, b) => b.score - a.score);
+  return scored[0].i;
+}
+
+function runEnemyTurn(state) {
+  let s = { ...state };
+  const log = [];
+  const stableStreak = s.stableStreak || 0;
+
+  // 1. Reel
+  const reel = rollReel(stableStreak);
+  s.reel = reel;
+  s.stableStreak = reel.mult === 'Stable' ? stableStreak + 1 : 0;
+
+  const unitCards = s.enemyHand.filter(c => c.def.type === 'unit');
+  if (unitCards.length) {
+    // inject into the priciest unit we might play
+    const target = unitCards.slice().sort((a, b) => b.def.cost - a.def.cost)[0];
+    s.enemyHand = s.enemyHand.map(c => c.uid === target.uid ? { ...c, mutation: reel } : c);
+    log.push(`Enemy injects ${reel.element} + ${reel.effect} + ${reel.mult} into ${target.def.name}.`);
+  }
+
+  // 2. Play cards
+  let energy = s.enemyEnergy;
+  let grid = s.enemyGrid.slice();
+  let hand = s.enemyHand.slice();
+  let guard = 0;
+  while (guard++ < 12) {
+    const playable = hand.filter(c => c.def.cost <= energy && c.def.type === 'unit');
+    if (!playable.length) break;
+    const hasEmpty = grid.some(c => !c);
+    if (!hasEmpty) break;
+    playable.sort((a, b) => b.def.cost - a.def.cost);
+    const card = playable[0];
+    const resolved = resolveCard(card);
+    const cell = aiChooseCell(grid, resolved);
+    if (cell < 0) break;
+    const unit = makeUnitFromCard(card, cell);
+    grid[cell] = unit;
+    energy -= card.def.cost;
+    hand = hand.filter(c => c.uid !== card.uid);
+    log.push(`Enemy deploys ${card.def.name}.`);
+    const fused = tryFusion(grid, cell);
+    if (fused.fusions.length) {
+      grid = fused.grid;
+      fused.fusions.forEach(f => log.push(`⚡ Enemy fusion → ${f.to.name} (Tier ${f.to.tier}, ${f.to.atk}/${f.to.hp})`));
+    }
+  }
+
+  // 3. Flash Lance
+  const lance = hand.find(c => c.def.id === 'flash-lance');
+  if (lance && energy >= 2) {
+    let bestCol = -1, bestScore = 0;
+    for (let c = 0; c < 3; c++) {
+      const i = findTargetIndex(s.playerGrid, c);
+      if (i >= 0 && s.playerGrid[i] && s.playerGrid[i].hp <= 4) { bestCol = c; bestScore = s.playerGrid[i].hp; break; }
+    }
+    if (bestCol >= 0) {
+      const i = findTargetIndex(grid.length ? s.playerGrid : s.playerGrid, bestCol);
+      const pg = s.playerGrid.slice();
+      const tgt = pg[i];
+      if (tgt) {
+        tgt.hp -= 4;
+        log.push(`Enemy Flash Lance hits ${tgt.name} for 4.`);
+        if (tgt.hp <= 0) { log.push(`☠ ${tgt.name} is destroyed.`); pg[i] = null; }
+        s.playerGrid = pg;
+      }
+      energy -= 2;
+      hand = hand.filter(c => c.uid !== lance.uid);
+    }
+  }
+
+  s.enemyGrid = grid;
+  s.enemyHand = hand;
+  s.enemyEnergy = energy;
+  s.log = [...s.log, ...log.map(t => ({ t, k: 'enemy' }))];
+  s.phase = s.firstMover === 'e' ? 'player-reel' : 'clash';
+  if (s.firstMover === 'e') {
+    s.pendingPlayerTurn = true;
+  }
+  return s;
+}
+
+/* ============================================================================
+   BATTLE INIT
+============================================================================ */
+function initBattle(playerDeckIds) {
+  const deckIds = (playerDeckIds && playerDeckIds.length === 15) ? playerDeckIds : STANDARD_DECK;
+  const pDeck = shuffle(deckIds.map(makeCardInstance));
+  const eDeck = shuffle(STANDARD_DECK.map(makeCardInstance));
+  const pHand = pDeck.splice(0, 4);
+  const eHand = eDeck.splice(0, 4);
+
+  const base = {
+    round: 1,
+    phase: 'player-reel',
+    firstMover: 'p',
+    playerCore: 20,
+    enemyCore: 20,
+    playerEnergy: energyForRound(1),
+    enemyEnergy: energyForRound(1),
+    pDeck, eDeck, pHand, eHand,
+    playerGrid: Array(9).fill(null),
+    enemyGrid: Array(9).fill(null),
+    reel: null,
+    reelSpun: false,
+    spinning: false,
+    log: [
+      { t: 'Simulation online. Round 1 — Energy 3.', k: 'sys' },
+      { t: 'Spin the Mutagen Reel to begin your turn.', k: 'sys' },
+    ],
+    winner: null,
+    stableStreak: 0,
+    floaters: [],
+    clashFlash: false,
+  };
+  return base;
+}
+
+/* ============================================================================
+   SMALL UI PIECES
+============================================================================ */
+function NeonButton({ children, onClick, disabled, tone = 'cyan', className = '', size = 'md' }) {
+  const tones = {
+    cyan: 'text-cyan-200 border-cyan-400/50 bg-cyan-400/10 hover:bg-cyan-400/20 shadow-[0_0_22px_-6px_rgba(62,240,255,.9)]',
+    magenta: 'text-fuchsia-200 border-fuchsia-400/50 bg-fuchsia-400/10 hover:bg-fuchsia-400/20 shadow-[0_0_22px_-6px_rgba(255,62,240,.9)]',
+    gold: 'text-amber-200 border-amber-400/50 bg-amber-400/10 hover:bg-amber-400/20 shadow-[0_0_22px_-6px_rgba(255,204,77,.9)]',
+    ghost: 'text-slate-300 border-white/15 bg-white/5 hover:bg-white/10',
+    danger: 'text-rose-200 border-rose-400/50 bg-rose-500/10 hover:bg-rose-500/20',
+  };
+  const sizes = { sm: 'px-3 py-1.5 text-[11px]', md: 'px-4 py-2 text-xs', lg: 'px-6 py-3 text-sm' };
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`btn-neon font-display tracking-widest uppercase rounded-lg border ${tones[tone]} ${sizes[size]} ${className} disabled:cursor-not-allowed`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function SectionTitle({ icon, title, sub }) {
+  return (
+    <div className="flex items-center gap-3 mb-4">
+      <div className="w-9 h-9 rounded-lg grid place-items-center bg-cyan-400/10 border border-cyan-400/30 text-cyan-300 shrink-0">
+        <Icon name={icon} size={18} />
+      </div>
+      <div>
+        <h2 className="font-display text-sm tracking-[.18em] uppercase text-cyan-100">{title}</h2>
+        {sub && <p className="text-[11px] text-slate-400 font-body tracking-wide">{sub}</p>}
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================================
+   CARD VIEW
+============================================================================ */
+function CardView({
+  ci, size = 'md', selected = false, dim = false, onClick, draggable = false,
+  onDragStart, showMutation = true, glow = false, footer = null, className = '',
+}) {
+  const def = ci.def;
+  const stats = resolveCard(ci);
+  const elem = stats.element;
+  const col = ELEM_COLOR(elem);
+  const ref = useRef(null);
+  const [hovered, setHovered] = useState(false);
+
+  const sizes = {
+    xs: 'w-[74px] h-[104px] text-[9px]',
+    sm: 'w-[92px] h-[128px] text-[10px]',
+    md: 'w-[124px] h-[172px] text-[11px]',
+    lg: 'w-[150px] h-[208px] text-xs',
+  };
+
+  const handleMove = e => {
+    const el = ref.current; if (!el) return;
+    const r = el.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width - 0.5;
+    const py = (e.clientY - r.top) / r.height - 0.5;
+    el.style.transform = `perspective(760px) rotateY(${px * 15}deg) rotateX(${-py * 15}deg) translateZ(14px) scale(1.045)`;
+    el.style.setProperty('--mx', `${(px + 0.5) * 100}%`);
+    el.style.setProperty('--my', `${(py + 0.5) * 100}%`);
+  };
+  const handleLeave = () => {
+    const el = ref.current; if (el) el.style.transform = '';
+    setHovered(false);
+  };
+
+  const isSpell = def.type === 'spell';
+  const isQuantum = def.type === 'quantum';
+
+  return (
+    <div
+      ref={ref}
+      onClick={onClick}
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onMouseMove={handleMove}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={handleLeave}
+      className={`tcg-card relative shrink-0 rounded-xl overflow-hidden cursor-pointer select-none
+        ${sizes[size]} ${selected ? 'ring-2 ring-cyan-300' : ''} ${dim ? 'opacity-45 grayscale-[.6]' : ''}
+        ${glow ? 'glow-pulse' : ''} ${className}`}
+      style={{
+        background: `linear-gradient(168deg, ${col}22 0%, #12141b 38%, #0b0c11 100%)`,
+        border: `1px solid ${col}66`,
+        boxShadow: selected
+          ? `0 0 0 2px ${col}, 0 0 30px -4px ${col}`
+          : `0 6px 22px -10px #000, inset 0 0 26px ${col}14, 0 0 16px -8px ${col}`,
+      }}
+    >
+      {/* corner glow */}
+      <div className="absolute -top-8 -right-8 w-20 h-20 rounded-full blur-2xl opacity-50 pointer-events-none"
+        style={{ background: col }} />
+      {/* element stripe */}
+      <div className="absolute left-0 top-0 bottom-0 w-[3px]" style={{ background: `linear-gradient(180deg, ${col}, transparent)` }} />
+
+      {/* cost orb */}
+      <div className="absolute top-1 left-1.5 w-[22px] h-[22px] rounded-full grid place-items-center font-display font-bold text-[11px] z-10"
+        style={{ background: 'radial-gradient(circle at 35% 30%, #7fe9ff, #136a86)', color: '#00151c', boxShadow: '0 0 12px rgba(62,240,255,.8)' }}>
+        {def.cost}
+      </div>
+
+      {/* element icon */}
+      <div className="absolute top-1.5 right-1.5 z-10 opacity-90" style={{ color: col }}>
+        <Icon name={ELEM_ICON(elem)} size={14} />
+      </div>
+
+      {/* art well */}
+      <div className="absolute top-[26px] left-1.5 right-1.5 h-[38%] rounded-md overflow-hidden grid place-items-center"
+        style={{ background: `radial-gradient(circle at 50% 60%, ${col}33, #05060a 78%)`, border: `1px solid ${col}33` }}>
+        <div className="opacity-80" style={{ color: col, filter: `drop-shadow(0 0 8px ${col})` }}>
+          <Icon name={ELEM_ICON(elem)} size={size === 'xs' ? 22 : size === 'sm' ? 28 : 36} strokeWidth={1.4} />
+        </div>
+        {isQuantum && (
+          <div className="absolute bottom-0.5 left-0 right-0 text-center font-display text-[7px] tracking-[.2em] text-fuchsia-300">
+            QUANTUM
+          </div>
+        )}
+      </div>
+
+      {/* name */}
+      <div className="absolute left-1.5 right-1.5 top-[calc(26px+38%+3px)] text-center">
+        <div className="font-display font-bold leading-tight truncate" style={{ color: '#e9f1ff', fontSize: size === 'xs' ? 7.5 : size === 'sm' ? 9 : 10.5 }}>
+          {def.name}
+        </div>
+      </div>
+
+      {/* rarity gem */}
+      <div className="absolute left-1.5 bottom-1.5 w-1.5 h-1.5 rotate-45"
+        style={{ background: RARITY[def.rarity].color, boxShadow: `0 0 8px ${RARITY[def.rarity].color}` }} />
+
+      {/* stats */}
+      {!isSpell && (
+        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+          <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded font-display font-bold"
+            style={{ background: 'rgba(255,140,60,.16)', color: '#ffb27a', border: '1px solid rgba(255,160,90,.35)', fontSize: size === 'xs' ? 8 : 10 }}>
+            <Icon name="swords" size={size === 'xs' ? 7 : 9} />{stats.atk}
+          </div>
+          <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded font-display font-bold"
+            style={{ background: 'rgba(90,220,160,.16)', color: '#7bffc0', border: '1px solid rgba(90,220,160,.35)', fontSize: size === 'xs' ? 8 : 10 }}>
+            <Icon name="heart" size={size === 'xs' ? 7 : 9} />{stats.hp}
+          </div>
+          {stats.armor > 0 && (
+            <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded font-display font-bold"
+              style={{ background: 'rgba(120,170,255,.18)', color: '#a8c8ff', border: '1px solid rgba(120,170,255,.35)', fontSize: size === 'xs' ? 8 : 10 }}>
+              <Icon name="shield" size={size === 'xs' ? 7 : 9} />{stats.armor}
+            </div>
+          )}
+        </div>
+      )}
+
+      {isSpell && (
+        <div className="absolute bottom-1 left-1.5 right-1.5 text-center text-[7px] tracking-[.16em] font-display text-slate-400">
+          SPELL
+        </div>
+      )}
+
+      {/* mutation chip */}
+      {showMutation && ci.mutation && (
+        <div className="absolute top-[26px] left-1 right-1 flex flex-wrap gap-0.5 justify-end pointer-events-none">
+          <span className="px-1 rounded-sm font-display"
+            style={{ fontSize: 7, background: `${ELEM_COLOR(ci.mutation.element)}33`, color: ELEM_COLOR(ci.mutation.element), border: `1px solid ${ELEM_COLOR(ci.mutation.element)}77` }}>
+            {ci.mutation.element}
+          </span>
+          <span className="px-1 rounded-sm font-display bg-fuchsia-500/25 text-fuchsia-200 border border-fuchsia-400/50" style={{ fontSize: 7 }}>
+            {ci.mutation.effect}
+          </span>
+        </div>
+      )}
+
+      {/* hover tooltip */}
+      {hovered && def.text && (
+        <div className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full w-48 p-2 rounded-lg z-30 pointer-events-none
+          bg-[#0b0d13]/95 border border-cyan-400/30 text-[10px] leading-snug text-slate-300 shadow-2xl">
+          {def.text}
+        </div>
+      )}
+
+      {footer}
+    </div>
+  );
+}
+
+/* ============================================================================
+   BATTLE GRID
+============================================================================ */
+function BattleUnit({ unit, side, isTargetable, isSelected, onClick }) {
+  const ref = useRef(null);
+  const [hover, setHover] = useState(false);
+  const col = ELEM_COLOR(unit.element);
+
+  const move = e => {
+    const el = ref.current; if (!el) return;
+    const r = el.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width - 0.5;
+    const py = (e.clientY - r.top) / r.height - 0.5;
+    el.style.transform = `perspective(600px) rotateY(${px * 18}deg) rotateX(${-py * 18}deg) translateZ(8px) scale(1.06)`;
+  };
+  const leave = () => { const el = ref.current; if (el) el.style.transform = ''; setHover(false); };
+
+  return (
+    <div ref={ref} onMouseMove={move} onMouseLeave={leave} onClick={onClick}
+      className={`tcg-card absolute inset-0 rounded-lg flex flex-col items-center justify-center overflow-hidden
+        ${isTargetable ? 'ring-2 ring-rose-400 cursor-crosshair' : ''}
+        ${isSelected ? 'ring-2 ring-cyan-300' : ''}`}
+      style={{
+        background: `linear-gradient(170deg, ${col}2e, #0b0d13 62%)`,
+        border: `1px solid ${col}88`,
+        boxShadow: `inset 0 0 18px ${col}22, 0 0 14px -6px ${col}`,
+      }}
+    >
+      <div className="absolute inset-x-0 top-0 h-[2px]" style={{ background: col, boxShadow: `0 0 10px ${col}` }} />
+      <div style={{ color: col, opacity: .95 }} className="mb-0.5">
+        <Icon name={ELEM_ICON(unit.element)} size={16} strokeWidth={1.7} />
+      </div>
+      <div className="font-display text-[8px] leading-tight text-center px-1 text-slate-200 truncate w-full">
+        {unit.name.replace(' ✦', '')}
+      </div>
+      <div className="flex items-center gap-1 mt-0.5">
+        <span className="font-display font-bold text-[10px] text-orange-300">{unit.atk}</span>
+        <span className="text-slate-600 text-[9px]">/</span>
+        <span className="font-display font-bold text-[10px] text-emerald-300">{unit.hp}</span>
+      </div>
+      {unit.tier > 1 && (
+        <div className="absolute top-0.5 right-1 font-display text-[7px] tracking-widest text-amber-300">T{unit.tier}</div>
+      )}
+      {unit.armor > 0 && (
+        <div className="absolute top-0.5 left-1 flex items-center gap-0.5 text-[7px] text-sky-300 font-display">
+          <Icon name="shield" size={7} />{effectiveArmor(unit)}
+        </div>
+      )}
+      {/* statuses */}
+      <div className="absolute bottom-0.5 left-0 right-0 flex justify-center gap-0.5 flex-wrap">
+        {unit.statuses.burn > 0 && <span className="px-1 rounded-sm bg-orange-500/30 text-orange-200 text-[7px] font-display border border-orange-400/40">B{unit.statuses.burn}</span>}
+        {unit.statuses.chill > 0 && <span className="px-1 rounded-sm bg-sky-500/30 text-sky-200 text-[7px] font-display border border-sky-400/40">C{unit.statuses.chill}</span>}
+        {unit.statuses.corrode > 0 && <span className="px-1 rounded-sm bg-lime-500/30 text-lime-200 text-[7px] font-display border border-lime-400/40">K{unit.statuses.corrode}</span>}
+        {unit.statuses.shock > 0 && <span className="px-1 rounded-sm bg-yellow-400/30 text-yellow-100 text-[7px] font-display border border-yellow-300/40">⚡</span>}
+      </div>
+      {unit.effect && hover && (
+        <div className="absolute inset-x-0 -bottom-1 translate-y-full z-30 text-[8px] text-center bg-black/85 text-fuchsia-200 py-0.5 rounded border border-fuchsia-400/40">
+          {unit.effect}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BattleGrid({ grid, side, onCellClick, highlightCells, selectedCell, targetableColumns, floaters }) {
+  const rows = side === 'enemy' ? [2, 1, 0] : [0, 1, 2];
+  return (
+    <div className="relative">
+      <div className="grid grid-cols-3 gap-1.5">
+        {rows.map(r => [0, 1, 2].map(c => {
+          const i = r * 3 + c;
+          const unit = grid[i];
+          const isHL = highlightCells?.includes(i);
+          const colTargetable = targetableColumns?.includes(c);
+          const floater = (floaters || []).find(f => f.side === side && f.idx === i);
+          return (
+            <div key={i}
+              onClick={() => onCellClick && onCellClick(i, c)}
+              className={`grid-cell relative rounded-lg h-[70px] sm:h-[80px] ${colTargetable ? 'cursor-crosshair' : 'cursor-pointer'}`}
+              style={{
+                background: isHL ? 'rgba(62,240,255,.09)' : 'rgba(255,255,255,.022)',
+                border: isHL ? '1px dashed rgba(62,240,255,.75)' : colTargetable ? '1px dashed rgba(255,62,120,.7)' : '1px solid rgba(120,150,200,.13)',
+                boxShadow: isHL ? '0 0 18px -4px rgba(62,240,255,.8), inset 0 0 14px rgba(62,240,255,.12)' : 'inset 0 1px 0 rgba(255,255,255,.03)',
+              }}>
+              {unit
+                ? <BattleUnit unit={unit} side={side} isSelected={selectedCell === i} />
+                : <div className="absolute inset-0 grid place-items-center text-slate-700">
+                    {isHL ? <Icon name="plus" size={16} className="text-cyan-400/70" /> : <div className="w-1 h-1 rounded-full bg-slate-700/80" />}
+                  </div>}
+              {floater && (
+                <div key={floater.amt + Math.random()} className="absolute inset-0 grid place-items-center pointer-events-none z-40">
+                  <div className="font-display font-black text-xl text-rose-300 pop-in" style={{ textShadow: '0 0 14px #ff2d6f' }}>
+                    -{floater.amt}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        }))}
+      </div>
+      <div className="absolute -left-5 top-0 bottom-0 flex flex-col justify-around text-[8px] font-display text-slate-600 tracking-widest">
+        {rows.map(r => <span key={r}>{['FRONT','MID','BACK'][r]}</span>)}
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================================
+   REEL MACHINE
+============================================================================ */
+function ReelMachine({ reel, spinning, onSpin, canSpin, injectHint }) {
+  const [cycle, setCycle] = useState({ element: 'Ember', effect: 'Burn', mult: 'Stable' });
+  useEffect(() => {
+    if (!spinning) return;
+    const t = setInterval(() => {
+      setCycle({
+        element: pick(ELEMENT_LIST),
+        effect: pick(REEL_EFFECTS),
+        mult: pick(MULT_KEYS),
+      });
+    }, 70);
+    return () => clearInterval(t);
+  }, [spinning]);
+
+  const shown = spinning ? cycle : (reel || cycle);
+  const eCol = ELEM_COLOR(shown.element);
+
+  return (
+    <div className="glass rounded-2xl p-3 sm:p-4 relative overflow-hidden">
+      <div className="absolute inset-0 opacity-40 pointer-events-none"
+        style={{ background: `radial-gradient(circle at 50% 0%, ${eCol}22, transparent 70%)` }} />
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <Icon name="target" size={13} className="text-cyan-300" />
+          <span className="font-display text-[10px] tracking-[.22em] text-cyan-200">MUTAGEN REEL</span>
+        </div>
+        <span className="text-[9px] font-body text-slate-500 tracking-wider">ELEMENT · EFFECT · MULTIPLIER</span>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 mb-3">
+        {[
+          { label: 'ELEMENT', value: shown.element, color: eCol, icon: ELEM_ICON(shown.element) },
+          { label: 'EFFECT', value: shown.effect, color: '#e879f9', icon: 'sparkles' },
+          { label: 'MULT', value: shown.mult, color: '#ffcc4d', icon: 'plus' },
+        ].map((slot, i) => (
+          <div key={i} className="relative rounded-xl px-2 py-2.5 overflow-hidden"
+            style={{
+              background: `linear-gradient(180deg, ${slot.color}1c, rgba(10,12,18,.9))`,
+              border: `1px solid ${slot.color}55`,
+              boxShadow: spinning ? `0 0 20px -4px ${slot.color}` : `inset 0 0 20px ${slot.color}12`,
+            }}>
+            <div className="text-[7.5px] font-display tracking-[.2em] mb-1" style={{ color: `${slot.color}bb` }}>{slot.label}</div>
+            <div key={shown[Object.keys(shown)[i]]} className={`flex items-center gap-1 ${spinning ? 'reel-tick' : 'pop-in'}`}>
+              <Icon name={slot.icon} size={13} style={{ color: slot.color }} />
+              <span className="font-display font-bold text-[11px] truncate" style={{ color: slot.color }}>
+                {slot.value}
+              </span>
+            </div>
+            <div className="absolute inset-x-0 top-0 h-[1px]" style={{ background: slot.color, opacity: .6 }} />
+          </div>
+        ))}
+      </div>
+
+      <NeonButton onClick={onSpin} disabled={!canSpin || spinning} tone="magenta" size="md" className="w-full">
+        <span className="flex items-center justify-center gap-2">
+          <Icon name="refresh" size={13} className={spinning ? 'animate-spin' : ''} />
+          {spinning ? 'SPINNING…' : 'SPIN REEL'}
+        </span>
+      </NeonButton>
+
+      {injectHint && (
+        <div className="mt-2 text-center text-[10px] font-body text-cyan-300/90 animate-pulse tracking-wide">
+          {injectHint}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ============================================================================
+   CORE HP BAR
+============================================================================ */
+function CoreBar({ hp, side, energy, handCount, deckCount }) {
+  const pct = (hp / 20) * 100;
+  const danger = hp <= 6;
+  const col = side === 'player' ? '#3ef0ff' : '#ff3ef0';
+  return (
+    <div className="glass rounded-xl px-3 py-2 flex items-center gap-3">
+      <div className="relative w-9 h-9 shrink-0 grid place-items-center">
+        <div className={`absolute inset-0 rounded-full ${danger ? 'animate-ping' : ''}`}
+          style={{ background: `radial-gradient(circle, ${col}55, transparent 70%)` }} />
+        <div className="absolute inset-0 rounded-full border-2 grid place-items-center"
+          style={{ borderColor: col, boxShadow: `0 0 16px ${col}88, inset 0 0 12px ${col}44` }}>
+          <Icon name={danger ? 'skull' : 'shield'} size={15} style={{ color: col }} />
+        </div>
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-baseline justify-between mb-1">
+          <span className="font-display text-[10px] tracking-[.2em] uppercase" style={{ color: col }}>
+            {side === 'player' ? 'YOUR CORE' : 'ENEMY CORE'}
+          </span>
+          <span className="font-display font-black text-sm" style={{ color: col, textShadow: `0 0 12px ${col}` }}>
+            {hp}<span className="text-[9px] text-slate-500">/20</span>
+          </span>
+        </div>
+        <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+          <div className="h-full rounded-full transition-all duration-500"
+            style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${col}, ${col}99)`, boxShadow: `0 0 12px ${col}` }} />
+        </div>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-sky-400/10 border border-sky-400/30">
+          <Icon name="zap" size={11} className="text-sky-300" />
+          <span className="font-display text-[11px] text-sky-200 font-bold">{energy}</span>
+        </div>
+        <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-white/5 border border-white/10">
+          <Icon name="grid" size={11} className="text-slate-400" />
+          <span className="font-display text-[11px] text-slate-300">{handCount}</span>
+        </div>
+        <div className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-md bg-white/5 border border-white/10">
+          <Icon name="book" size={11} className="text-slate-500" />
+          <span className="font-display text-[11px] text-slate-400">{deckCount}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================================
+   BATTLE SCREEN
+============================================================================ */
+function BattleScreen({ deckIds, onExit }) {
+  const [state, setState] = useState(() => initBattle(deckIds));
+  const [selectedHand, setSelectedHand] = useState(null);
+  const [targeting, setTargeting] = useState(null);
+  const [isolate, setIsolate] = useState(false);
+  const [quantumRoll, setQuantumRoll] = useState(null);
+  const [shakeKey, setShakeKey] = useState(0);
+  const [floaters, setFloaters] = useState([]);
+  const logRef = useRef(null);
+
+  useEffect(() => {
+    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
+  }, [state.log]);
+
+  /* ---------- Phase driver ---------- */
+  useEffect(() => {
+    if (state.phase === 'enemy') {
+      const t = setTimeout(() => setState(s => (s.phase === 'enemy' ? runEnemyTurn(s) : s)), 750);
+      return () => clearTimeout(t);
+    }
+    if (state.phase === 'clash') {
+      const t = setTimeout(() => {
+        setState(s => {
+          if (s.phase !== 'clash') return s;
+          const res = resolveClash(s);
+          setShakeKey(k => k + 1);
+          setFloaters(res.floaters);
+          setTimeout(() => setFloaters([]), 1400);
+
+          let next = {
+            ...s,
+            playerGrid: res.playerGrid,
+            enemyGrid: res.enemyGrid,
+            playerCore: res.playerCore,
+            enemyCore: res.enemyCore,
+            log: [...s.log, { t: '═══ CLASH ═══', k: 'clash' }, ...res.clashLog.map(t => ({ t, k: 'clash' }))],
+            clashFlash: true,
+          };
+          setTimeout(() => setState(x => ({ ...x, clashFlash: false })), 850);
+
+          if (res.playerCore <= 0 || res.enemyCore <= 0) {
+            const w = res.enemyCore <= 0 && res.playerCore > 0 ? 'p' : res.playerCore <= 0 && res.enemyCore > 0 ? 'e' : 'draw';
+            return { ...next, phase: 'over', winner: w };
+          }
+          if (s.round >= 8) {
+            const w = res.playerCore > res.enemyCore ? 'p' : res.enemyCore > res.playerCore ? 'e' : 'draw';
+            return { ...next, phase: 'over', winner: w };
+          }
+          // next round
+          const round = s.round + 1;
+          let pDeck = next.pDeck.slice(), eDeck = next.eDeck.slice();
+          let pHand = next.pHand.slice(), eHand = next.eHand.slice();
+          if (pDeck.length) pHand.push(pDeck.shift());
+          if (eDeck.length) eHand.push(eDeck.shift());
+          const firstMover = round % 2 === 1 ? 'p' : 'e';
+          return {
+            ...next,
+            round, firstMover,
+            playerEnergy: energyForRound(round),
+            enemyEnergy: energyForRound(round),
+            pDeck, eDeck, pHand, eHand,
+            reel: null, reelSpun: false,
+            phase: firstMover === 'p' ? 'player-reel' : 'enemy',
+            log: [...next.log, { t: `── Round ${round} begins. Energy ${energyForRound(round)}. ${firstMover === 'p' ? 'You move first.' : 'Enemy moves first.'} ──`, k: 'sys' }],
+          };
+        });
+      }, 950);
+      return () => clearTimeout(t);
+    }
+  }, [state.phase, state.round]);
+
+  /* ---------- Actions ---------- */
+  const spin = () => {
+    if (state.phase !== 'player-reel' || state.spinning) return;
+    setState(s => ({ ...s, spinning: true }));
+    setTimeout(() => {
+      setState(s => {
+        const reel = rollReel(s.stableStreak);
+        return {
+          ...s,
+          spinning: false,
+          reel,
+          reelSpun: true,
+          stableStreak: reel.mult === 'Stable' ? s.stableStreak + 1 : 0,
+          log: [...s.log, { t: `Reel: ${reel.element} · ${reel.effect} · ${reel.mult}`, k: 'sys' }],
+        };
+      });
+    }, 900);
+  };
+
+  const injectInto = (ci) => {
+    if (!state.reel || !state.reelSpun || state.phase !== 'player-reel') return;
+    if (ci.def.type !== 'unit') return;
+    setState(s => ({
+      ...s,
+      pHand: s.pHand.map(c => c.uid === ci.uid ? { ...c, mutation: s.reel } : c),
+      phase: 'player-main',
+      reelSpun: false,
+      log: [...s.log, { t: `Injected ${s.reel.element}/${s.reel.effect}/${s.reel.mult} into ${ci.def.name}.`, k: 'player' }],
+    }));
+  };
+
+  const skipInject = () => {
+    setState(s => ({ ...s, phase: 'player-main', reelSpun: false, log: [...s.log, { t: 'Reel Charge discarded.', k: 'sys' }] }));
+  };
+
+  const playUnitAt = (cellIdx) => {
+    if (!selectedHand) return;
+    const card = state.pHand.find(c => c.uid === selectedHand);
+    if (!card) return;
+    if (card.def.cost > state.playerEnergy) return;
+    if (state.playerGrid[cellIdx]) return;
+
+    if (card.def.type === 'quantum') {
+      // Quantum reveal
+      const roll = Math.random();
+      let outcome = 'Standard';
+      if (roll < 0.15) outcome = 'Disaster';
+      else if (roll > 0.85) outcome = 'Jackpot';
+      setQuantumRoll({ outcome, card, cellIdx });
+      setTimeout(() => {
+        setState(s => resolveQuantum(s, card, cellIdx, outcome));
+        setTimeout(() => setQuantumRoll(null), 700);
+        setSelectedHand(null);
+      }, 1900);
+      return;
+    }
+
+    if (card.def.type === 'spell') return;
+
+    setState(s => {
+      const unit = makeUnitFromCard(card, cellIdx);
+      let grid = s.playerGrid.slice();
+      grid[cellIdx] = unit;
+      let log = [...s.log, { t: `You deploy ${card.def.name} (${unit.atk}/${unit.hp} ${unit.element}).`, k: 'player' }];
+      if (!isolate) {
+        const fused = tryFusion(grid, cellIdx);
+        if (fused.fusions.length) {
+          grid = fused.grid;
+          fused.fusions.forEach(f => log.push({ t: `⚡ FUSION → ${f.to.name} Tier ${f.to.tier} (${f.to.atk}/${f.to.hp}) — ${f.perk}`, k: 'fusion' }));
+        }
+      }
+      return {
+        ...s,
+        playerGrid: grid,
+        playerEnergy: s.playerEnergy - card.def.cost,
+        pHand: s.pHand.filter(c => c.uid !== card.uid),
+        log,
+      };
+    });
+    setSelectedHand(null);
+  };
+
+  const castSpellAt = (payload) => {
+    const card = state.pHand.find(c => c.uid === targeting.cardUid);
+    if (!card) { setTargeting(null); return; }
+    setState(s => {
+      let grid = s.playerGrid.slice();
+      let log = [...s.log];
+      let pCore = s.playerCore, eCore = s.enemyCore;
+
+      if (card.def.id === 'flash-lance') {
+        const col = payload.col;
+        const idx = findTargetIndex(grid, col);
+        if (idx >= 0) {
+          const t = { ...grid[idx], statuses: { ...grid[idx].statuses } };
+          t.hp -= 4;
+          log.push({ t: `Flash Lance strikes ${t.name} for 4.`, k: 'player' });
+          if (t.hp <= 0) { log.push({ t: `☠ ${t.name} destroyed.`, k: 'player' }); grid[idx] = null; }
+          else grid[idx] = t;
+        } else {
+          eCore = Math.max(0, eCore - 4);
+          log.push({ t: `Flash Lance hits the ENEMY CORE for 4.`, k: 'player' });
+        }
+      }
+      if (card.def.id === 'phase-shift') {
+        const { from, to } = payload;
+        const u = grid[from];
+        const other = grid[to];
+        grid[to] = u;
+        grid[from] = other || null;
+        log.push({ t: `Phase Shift moves ${u.name}.`, k: 'player' });
+        const fused = tryFusion(grid, to);
+        if (fused.fusions.length) {
+          grid = fused.grid;
+          fused.fusions.forEach(f => log.push({ t: `⚡ FUSION → ${f.to.name} Tier ${f.to.tier}`, k: 'fusion' }));
+        }
+      }
+      if (card.def.id === 'graft-pulse') {
+        const { fromUid, toUid } = payload;
+        let moved = null;
+        const hand = s.pHand.map(c => {
+          if (c.uid === fromUid) { moved = c.mutation; return { ...c, mutation: null }; }
+          return c;
+        }).map(c => (c.uid === toUid ? { ...c, mutation: moved } : c));
+        log.push({ t: `Graft Pulse transfers a mutation.`, k: 'player' });
+        return { ...s, pHand: hand, playerEnergy: s.playerEnergy - card.def.cost, log };
+      }
+
+      return {
+        ...s,
+        playerGrid: grid,
+        playerCore: pCore,
+        enemyCore: eCore,
+        playerEnergy: s.playerEnergy - card.def.cost,
+        pHand: s.pHand.filter(c => c.uid !== card.uid),
+        log,
+      };
+    });
+    setTargeting(null);
+    setSelectedHand(null);
+  };
+
+  const endTurn = () => {
+    if (state.phase !== 'player-main') return;
+    setSelectedHand(null);
+    setTargeting(null);
+    setState(s => ({
+      ...s,
+      phase: s.firstMover === 'p' ? 'enemy' : 'clash',
+      log: [...s.log, { t: 'You end your turn.', k: 'sys' }],
+    }));
+  };
+
+  const restart = () => {
+    setState(initBattle(deckIds));
+    setSelectedHand(null);
+    setTargeting(null);
+  };
+
+  /* ---------- derived ---------- */
+  const isMyTurn = state.phase === 'player-reel' || state.phase === 'player-main';
+  const canPlace = state.phase === 'player-main';
+  const highlightCells = (canPlace && selectedHand)
+    ? state.playerGrid.map((u, i) => (!u ? i : -1)).filter(i => i >= 0)
+    : [];
+
+  const handleHandClick = (ci) => {
+    if (!isMyTurn) return;
+    if (state.phase === 'player-reel' && state.reelSpun) {
+      if (ci.def.type === 'unit') injectInto(ci);
+      return;
+    }
+    if (state.phase !== 'player-main') return;
+    if (ci.def.cost > state.playerEnergy) return;
+    if (ci.def.type === 'spell') {
+      if (targeting?.cardUid === ci.uid) { setTargeting(null); setSelectedHand(null); return; }
+      setSelectedHand(ci.uid);
+      setTargeting({ cardUid: ci.uid, card: ci.def, step: 0, payload: {} });
+      return;
+    }
+    setSelectedHand(selectedHand === ci.uid ? null : ci.uid);
+  };
+
+  /* ---------- spell targeting on grid ---------- */
+  const onPlayerCellClick = (idx) => {
+    if (targeting) {
+      const id = targeting.card.id;
+      if (id === 'phase-shift') {
+        if (targeting.step === 0) {
+          if (!state.playerGrid[idx]) return;
+          setTargeting({ ...targeting, step: 1, payload: { from: idx } });
+        } else {
+          const from = targeting.payload.from;
+          const r1 = Math.floor(from / 3), c1 = from % 3, r2 = Math.floor(idx / 3), c2 = idx % 3;
+          if (Math.abs(r1 - r2) + Math.abs(c1 - c2) !== 1) return;
+          castSpellAt({ from, to: idx });
+        }
+        return;
+      }
+      if (id === 'flash-lance') {
+        castSpellAt({ col: idx % 3 });
+        return;
+      }
+    }
+    if (canPlace && selectedHand) playUnitAt(idx);
+  };
+
+  const onEnemyCellClick = (idx) => {
+    if (targeting?.card.id === 'flash-lance') castSpellAt({ col: idx % 3 });
+  };
+
+  /* ---------- Graft Pulse needs hand→hand ---------- */
+  const graftMode = targeting?.card.id === 'graft-pulse';
+
+  const overlay = state.phase === 'over';
+
+  return (
+    <div className="relative z-10">
+      {state.clashFlash && <div className="fixed inset-0 z-[60] pointer-events-none flash-overlay bg-white/25" />}
+
+      <div key={shakeKey} className={`${shakeKey ? 'shake' : ''} grid grid-cols-1 xl:grid-cols-[1fr_280px] gap-4`}>
+
+        {/* ============ MAIN BATTLE COLUMN ============ */}
+        <div className="space-y-3">
+
+          {/* Enemy */}
+          <div className="space-y-2">
+            <CoreBar hp={state.enemyCore} side="enemy" energy={state.enemyEnergy}
+              handCount={state.eHand.length} deckCount={state.eDeck.length} />
+            <div className="glass rounded-2xl p-3 relative">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-display text-[9px] tracking-[.22em] text-fuchsia-300/80">ENEMY GRID</span>
+                <span className="text-[9px] font-body text-slate-500">Round {state.round} / 8</span>
+              </div>
+              <BattleGrid grid={state.enemyGrid} side="enemy" onCellClick={onEnemyCellClick}
+                targetableColumns={targeting?.card.id === 'flash-lance' ? [0, 1, 2] : []} />
+            </div>
+          </div>
+
+          {/* Reel + turn controls */}
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-stretch">
+            <ReelMachine
+              reel={state.reel}
+              spinning={state.spinning}
+              onSpin={spin}
+              canSpin={state.phase === 'player-reel' && !state.reelSpun}
+              injectHint={
+                state.phase === 'player-reel' && state.reelSpun
+                  ? '▼ Click a Unit card in your hand to inject the Charge'
+                  : state.phase === 'player-reel' && !state.reel
+                  ? 'Spin to generate your Reel Charge'
+                  : null
+              }
+            />
+            <div className="glass rounded-2xl p-3 flex flex-col justify-between gap-2 min-w-[170px]">
+              <div className="text-center">
+                <div className="font-display text-[9px] tracking-[.22em] text-slate-500">PHASE</div>
+                <div className="font-display text-xs text-cyan-200 tracking-widest uppercase mt-0.5">
+                  {state.phase === 'player-reel' ? (state.reelSpun ? 'INJECT' : 'REEL') :
+                   state.phase === 'player-main' ? 'MAIN PHASE' :
+                   state.phase === 'enemy' ? 'ENEMY TURN' :
+                   state.phase === 'clash' ? 'CLASH' : 'FINISHED'}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                {state.phase === 'player-reel' && state.reelSpun && (
+                  <NeonButton tone="ghost" size="sm" className="w-full" onClick={skipInject}>
+                    Discard Charge
+                  </NeonButton>
+                )}
+                <NeonButton tone="cyan" size="md" className="w-full" onClick={endTurn}
+                  disabled={state.phase !== 'player-main'}>
+                  <span className="flex items-center justify-center gap-1.5"><Icon name="chevron" size={12} />End Turn</span>
+                </NeonButton>
+                <NeonButton tone="ghost" size="sm" className="w-full" onClick={restart}>
+                  Restart
+                </NeonButton>
+              </div>
+            </div>
+          </div>
+
+          {/* Player grid */}
+          <div className="glass rounded-2xl p-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-display text-[9px] tracking-[.22em] text-cyan-300/80">YOUR GRID</span>
+              {targeting && (
+                <button onClick={() => { setTargeting(null); setSelectedHand(null); }}
+                  className="text-[10px] font-display text-rose-300 hover:text-rose-200 flex items-center gap-1">
+                  <Icon name="x" size={10} /> CANCEL TARGET
+                </button>
+              )}
+            </div>
+            <BattleGrid grid={state.playerGrid} side="player" onCellClick={onPlayerCellClick}
+              highlightCells={highlightCells} floaters={floaters} />
+            <div className="mt-2">
+              <CoreBar hp={state.playerCore} side="player" energy={state.playerEnergy}
+                handCount={state.pHand.length} deckCount={state.pDeck.length} />
+            </div>
+          </div>
+
+          {/* Hand */}
+          <div className="glass rounded-2xl p-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-display text-[9px] tracking-[.22em] text-slate-400">YOUR HAND</span>
+              <button
+                onClick={() => setIsolate(v => !v)}
+                className={`text-[10px] font-display px-2 py-1 rounded border transition
+                  ${isolate ? 'bg-amber-400/20 border-amber-400/60 text-amber-200' : 'bg-white/5 border-white/10 text-slate-400'}`}>
+                {isolate ? '⊘ ISOLATE ON' : '⊘ ISOLATE OFF'}
+              </button>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar min-h-[140px] items-end">
+              {state.pHand.length === 0 && (
+                <div className="text-slate-600 text-xs font-body italic py-8 px-3">Hand empty — end your turn.</div>
+              )}
+              {state.pHand.map(ci => {
+                const affordable = ci.def.cost <= state.playerEnergy;
+                const isSelected = selectedHand === ci.uid || targeting?.cardUid === ci.uid;
+                return (
+                  <CardView key={ci.uid} ci={ci} size="md"
+                    selected={isSelected}
+                    dim={!affordable && state.phase === 'player-main'}
+                    glow={state.phase === 'player-reel' && state.reelSpun && ci.def.type === 'unit'}
+                    draggable={state.phase === 'player-main' && ci.def.type === 'unit'}
+                    onDragStart={e => {
+                      e.dataTransfer.setData('text/plain', ci.uid);
+                      setSelectedHand(ci.uid);
+                    }}
+                    onClick={() => {
+                      if (graftMode) {
+                        if (targeting.step === 0) {
+                          if (!ci.mutation) return;
+                          setTargeting({ ...targeting, step: 1, payload: { fromUid: ci.uid } });
+                        } else {
+                          if (ci.uid === targeting.payload.fromUid) return;
+                          castSpellAt({ fromUid: targeting.payload.fromUid, toUid: ci.uid });
+                        }
+                        return;
+                      }
+                      handleHandClick(ci);
+                    }}
+                  />
+                );
+              })}
+            </div>
+            {graftMode && (
+              <div className="text-[10px] text-fuchsia-300 font-body mt-1 tracking-wide animate-pulse">
+                Graft Pulse — select {targeting.step === 0 ? 'a mutated card (source)' : 'a destination card'}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ============ LOG SIDEBAR ============ */}
+        <aside className="glass rounded-2xl p-3 flex flex-col h-[420px] xl:h-auto xl:max-h-[calc(100vh-140px)]">
+          <div className="flex items-center gap-2 mb-2">
+            <Icon name="book" size={13} className="text-cyan-300" />
+            <span className="font-display text-[10px] tracking-[.2em] text-cyan-200">BATTLE LOG</span>
+          </div>
+          <div ref={logRef} className="flex-1 overflow-y-auto space-y-1 pr-1 text-[11px] font-body leading-snug">
+            {state.log.map((l, i) => (
+              <div key={i} className={`px-1.5 py-0.5 rounded ${
+                l.k === 'clash' ? 'text-rose-300/90' :
+                l.k === 'enemy' ? 'text-fuchsia-300/80' :
+                l.k === 'fusion' ? 'text-amber-300 font-semibold bg-amber-400/10' :
+                l.k === 'player' ? 'text-cyan-200/90' :
+                'text-slate-500'
+              }`}>{l.t}</div>
+            ))}
+          </div>
+          <div className="mt-2 pt-2 border-t border-white/10 grid grid-cols-2 gap-2 text-center">
+            <div>
+              <div className="text-[8px] font-display text-slate-500 tracking-widest">ROUND</div>
+              <div className="font-display text-sm text-cyan-200">{state.round}/8</div>
+            </div>
+            <div>
+              <div className="text-[8px] font-display text-slate-500 tracking-widest">FIRST</div>
+              <div className="font-display text-sm text-fuchsia-200">{state.firstMover === 'p' ? 'YOU' : 'ENEMY'}</div>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      {/* ============ QUANTUM ROULETTE ============ */}
+      {quantumRoll && (
+        <div className="fixed inset-0 z-[80] grid place-items-center bg-black/80 backdrop-blur-md">
+          <div className="text-center">
+            <div className="font-display text-[11px] tracking-[.4em] text-fuchsia-300 mb-4 animate-pulse">
+              QUANTUM COLLAPSE
+            </div>
+            <div className="w-40 h-40 mx-auto rounded-full grid place-items-center relative"
+              style={{ border: '2px solid rgba(255,62,240,.6)', boxShadow: '0 0 60px rgba(255,62,240,.6)' }}>
+              <div className="absolute inset-2 rounded-full border border-fuchsia-400/30 animate-ping" />
+              <Icon name="sparkles" size={48} className="text-fuchsia-300 rainbow" />
+            </div>
+            <div className="mt-6 h-12">
+              {quantumRoll && (
+                <div className="font-display text-2xl tracking-[.2em] pop-in"
+                  style={{ color: quantumRoll.outcome === 'Jackpot' ? '#ffcc4d' : quantumRoll.outcome === 'Disaster' ? '#ff5a7a' : '#7fe9ff' }}>
+                  {quantumRoll.outcome.toUpperCase()}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============ GAME OVER ============ */}
+      {overlay && (
+        <div className="fixed inset-0 z-[90] grid place-items-center bg-black/85 backdrop-blur-lg p-4">
+          <div className="glass rounded-3xl p-8 max-w-md w-full text-center pop-in relative overflow-hidden">
+            <div className="absolute inset-0 pointer-events-none"
+              style={{ background: state.winner === 'p' ? 'radial-gradient(circle at 50% 0%, rgba(62,240,255,.22), transparent 70%)' : 'radial-gradient(circle at 50% 0%, rgba(255,62,240,.22), transparent 70%)' }} />
+            <div className="relative">
+              <div className="mx-auto w-20 h-20 rounded-full grid place-items-center mb-4 float-y"
+                style={{
+                  border: `2px solid ${state.winner === 'p' ? '#3ef0ff' : state.winner === 'e' ? '#ff3ef0' : '#94a3b8'}`,
+                  boxShadow: `0 0 50px ${state.winner === 'p' ? '#3ef0ff88' : '#ff3ef088'}`,
+                  color: state.winner === 'p' ? '#3ef0ff' : state.winner === 'e' ? '#ff3ef0' : '#94a3b8',
+                }}>
+                <Icon name={state.winner === 'p' ? 'trophy' : state.winner === 'e' ? 'skull' : 'shield'} size={36} />
+              </div>
+              <h2 className="font-display text-2xl tracking-[.18em] mb-1"
+                style={{ color: state.winner === 'p' ? '#9ff7ff' : state.winner === 'e' ? '#ffb3f0' : '#cbd5e1' }}>
+                {state.winner === 'p' ? 'VICTORY' : state.winner === 'e' ? 'DEFEAT' : 'DRAW'}
+              </h2>
+              <p className="text-slate-400 text-sm font-body mb-1">
+                Core integrity — You {state.playerCore} / Enemy {state.enemyCore}
+              </p>
+              <p className="text-slate-500 text-[11px] font-body mb-6">Match concluded after Round {state.round}.</p>
+              <div className="flex gap-2 justify-center">
+                <NeonButton tone="cyan" size="md" onClick={restart}>Rematch</NeonButton>
+                <NeonButton tone="ghost" size="md" onClick={onExit}>Back to Hub</NeonButton>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* Quantum resolution helper (outside component so we can call in setState) */
+function resolveQuantum(s, card, cellIdx, outcome) {
+  let unit;
+  const base = resolveCard(card);
+  if (outcome === 'Standard') {
+    unit = makeUnitFromCard(card, cellIdx);
+    unit.name = card.def.name;
+  } else if (outcome === 'Jackpot') {
+    unit = makeUnitFromCard(card, cellIdx);
+    unit.atk = Math.round(base.atk * 1.75);
+    unit.maxHp = Math.round(base.hp * 1.75);
+    unit.hp = unit.maxHp;
+    unit.effect = 'Shock';
+    unit.effectStacks = 2;
+    unit.name = card.def.name + ' ★';
+    unit.element = 'Prism';
+  } else {
+    unit = {
+      uid: uid(), name: 'Twisted Larva', element: 'Prism', tier: 1,
+      atk: 1, maxHp: 1, hp: 1, armor: 0, effect: null, effectStacks: 1,
+      isQuantum: true, cellIdx, statuses: { burn: 0, chill: 0, corrode: 0, shock: 0, shockImmune: 0 },
+    };
+  }
+  const grid = s.playerGrid.slice();
+  grid[cellIdx] = unit;
+  let pCore = s.playerCore, eCore = s.enemyCore;
+  const log = [...s.log];
+  if (outcome === 'Disaster') {
+    pCore = Math.max(1, pCore - 3);
+    eCore = Math.max(1, eCore - 3);
+    log.push({ t: `Quantum DISASTER — both Cores take 3 (never lethal).`, k: 'clash' });
+  } else if (outcome === 'Jackpot') {
+    log.push({ t: `Quantum JACKPOT — ${unit.name} ${unit.atk}/${unit.hp} with Overcharge!`, k: 'fusion' });
+  } else {
+    log.push({ t: `Quantum Standard — ${unit.name} deploys ${unit.atk}/${unit.hp}.`, k: 'player' });
+  }
+  return {
+    ...s, playerGrid: grid, pHand: s.pHand.filter(c => c.uid !== card.uid),
+    playerEnergy: s.playerEnergy - card.def.cost, playerCore: pCore, enemyCore: eCore, log,
+  };
+}
+
+/* ============================================================================
+   DECK BUILDER
+============================================================================ */
+function DeckBuilder({ deck, setDeck }) {
+  const [filterElem, setFilterElem] = useState('All');
+  const [filterCost, setFilterCost] = useState('All');
+  const [filterType, setFilterType] = useState('All');
+  const [search, setSearch] = useState('');
+  const [hoverCard, setHoverCard] = useState(null);
+
+  const countOf = id => deck.filter(x => x === id).length;
+  const legendaryCount = deck.filter(id => CARD_BY_ID[id].rarity === 'Legendary').length;
+
+  const addCard = id => {
+    const def = CARD_BY_ID[id];
+    if (deck.length >= 15) return;
+    const max = def.rarity === 'Legendary' ? 1 : 2;
+    if (countOf(id) >= max) return;
+    if (def.rarity === 'Legendary' && legendaryCount >= 1) return;
+    setDeck([...deck, id]);
+  };
+  const removeCard = id => {
+    const i = deck.lastIndexOf(id);
+    if (i < 0) return;
+    const copy = deck.slice();
+    copy.splice(i, 1);
+    setDeck(copy);
+  };
+
+  const filtered = CARD_POOL.filter(c => {
+    if (filterElem !== 'All' && c.element !== filterElem) return false;
+    if (filterCost !== 'All' && String(c.cost) !== filterCost) return false;
+    if (filterType !== 'All' && c.type !== filterType) return false;
+    if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  const curve = [1, 2, 3, 4, 5].map(c => ({ cost: c, n: deck.filter(id => CARD_BY_ID[id].cost === c).length }));
+  const maxCurve = Math.max(1, ...curve.map(c => c.n));
+  const elemDist = ELEMENT_LIST.map(e => ({ e, n: deck.filter(id => CARD_BY_ID[id].element === e).length })).filter(x => x.n > 0);
+
+  const valid = deck.length === 15;
+
+  return (
+    <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
+      {/* Card vault */}
+      <div className="glass rounded-2xl p-4">
+        <SectionTitle icon="grid" title="Card Vault" sub={`${filtered.length} cards match your filters`} />
+
+        <div className="flex flex-wrap gap-2 mb-4">
+          <div className="relative">
+            <input value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Search…"
+              className="bg-black/40 border border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-xs font-body text-slate-200 outline-none focus:border-cyan-400/60 w-40" />
+            <Icon name="eye" size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
+          </div>
+          <select value={filterElem} onChange={e => setFilterElem(e.target.value)}
+            className="bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-xs font-body text-slate-200 outline-none focus:border-cyan-400/60">
+            <option value="All">All Elements</option>
+            {ELEMENT_LIST.map(e => <option key={e} value={e}>{e}</option>)}
+          </select>
+          <select value={filterCost} onChange={e => setFilterCost(e.target.value)}
+            className="bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-xs font-body text-slate-200 outline-none focus:border-cyan-400/60">
+            <option value="All">Any Cost</option>
+            {[1, 2, 3, 4, 5].map(c => <option key={c} value={c}>{c} Energy</option>)}
+          </select>
+          <select value={filterType} onChange={e => setFilterType(e.target.value)}
+            className="bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-xs font-body text-slate-200 outline-none focus:border-cyan-400/60">
+            <option value="All">All Types</option>
+            <option value="unit">Unit</option>
+            <option value="spell">Spell</option>
+            <option value="quantum">Quantum</option>
+          </select>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
+          {filtered.map(c => {
+            const owned = countOf(c.id);
+            const max = c.rarity === 'Legendary' ? 1 : 2;
+            return (
+              <div key={c.id} className="relative group">
+                <CardView
+                  ci={{ uid: c.id, def: c, mutation: null }}
+                  size="md"
+                  dim={owned === 0}
+                  onClick={() => addCard(c.id)}
+                />
+                <div className="absolute -top-1.5 -right-1.5 z-20 w-6 h-6 rounded-full grid place-items-center font-display text-[11px] font-bold
+                  bg-black/85 border border-cyan-400/50 text-cyan-200">
+                  {owned}/{max}
+                </div>
+                {owned > 0 && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); removeCard(c.id); }}
+                    className="absolute -bottom-1.5 -right-1.5 z-20 w-6 h-6 rounded-full grid place-items-center
+                      bg-rose-500/90 border border-rose-300 text-white hover:scale-110 transition">
+                    <Icon name="minus" size={12} />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Deck panel */}
+      <div className="glass rounded-2xl p-4 flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <SectionTitle icon="layers" title="Your Deck" sub="15 cards · max 2 copies · max 1 Legendary" />
+        </div>
+
+        <div className={`rounded-lg px-3 py-2 text-center font-display text-[11px] tracking-[.18em]
+          ${valid ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-400/40' : 'bg-rose-500/15 text-rose-300 border border-rose-400/40'}`}>
+          {valid ? '✓ DECK LEGAL — 15 / 15' : `INCOMPLETE — ${deck.length} / 15`}
+        </div>
+
+        <div className="min-h-[120px] max-h-[220px] overflow-y-auto space-y-1 pr-1">
+          {deck.length === 0 && <div className="text-slate-600 text-xs italic py-4 text-center">Click cards to add them.</div>}
+          {Object.entries(deck.reduce((acc, id) => { acc[id] = (acc[id] || 0) + 1; return acc; }, {})).map(([id, n]) => {
+            const def = CARD_BY_ID[id];
+            const col = ELEM_COLOR(def.element);
+            return (
+              <div key={id} className="flex items-center gap-2 px-2 py-1 rounded-md bg-white/[.03] border border-white/5 group">
+                <span className="w-5 h-5 rounded-full grid place-items-center text-[9px] font-display font-bold"
+                  style={{ background: '#1c6b80', color: '#c9f6ff' }}>{def.cost}</span>
+                <span className="flex-1 text-[11px] font-body truncate" style={{ color: col }}>{def.name}</span>
+                <span className="font-display text-[10px] text-slate-400">×{n}</span>
+                <button onClick={() => removeCard(id)}
+                  className="opacity-0 group-hover:opacity-100 text-rose-400 hover:text-rose-300 transition">
+                  <Icon name="x" size={11} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Curve */}
+        <div>
+          <div className="font-display text-[9px] tracking-[.2em] text-slate-500 mb-1.5">ENERGY CURVE</div>
+          <div className="flex items-end gap-1.5 h-16">
+            {curve.map(c => (
+              <div key={c.cost} className="flex-1 flex flex-col items-center gap-1">
+                <div className="w-full rounded-t transition-all duration-300"
+                  style={{
+                    height: `${(c.n / maxCurve) * 46}px`,
+                    minHeight: c.n ? 4 : 2,
+                    background: c.n ? 'linear-gradient(180deg, #3ef0ff, #1a6f85)' : 'rgba(255,255,255,.07)',
+                    boxShadow: c.n ? '0 0 12px -2px #3ef0ff' : 'none',
+                  }} />
+                <span className="text-[9px] font-display text-slate-500">{c.cost}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Element distribution */}
+        <div>
+          <div className="font-display text-[9px] tracking-[.2em] text-slate-500 mb-1.5">ELEMENT SPREAD</div>
+          <div className="flex h-2.5 rounded-full overflow-hidden bg-white/5">
+            {elemDist.map(x => (
+              <div key={x.e} style={{ width: `${(x.n / Math.max(1, deck.length)) * 100}%`, background: ELEM_COLOR(x.e) }} />
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2 mt-1.5">
+            {elemDist.map(x => (
+              <span key={x.e} className="flex items-center gap-1 text-[9px] font-body" style={{ color: ELEM_COLOR(x.e) }}>
+                <Icon name={ELEM_ICON(x.e)} size={9} />{x.e} {x.n}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex gap-2 mt-auto pt-2 border-t border-white/10">
+          <NeonButton tone="ghost" size="sm" className="flex-1" onClick={() => setDeck(STANDARD_DECK.slice())}>Standard</NeonButton>
+          <NeonButton tone="danger" size="sm" className="flex-1" onClick={() => setDeck([])}>Clear</NeonButton>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================================
+   DNA EXTRACTOR (GACHA)
+============================================================================ */
+function DnaLab({ coins, setCoins, collection, addToCollection }) {
+  const [pulling, setPulling] = useState(false);
+  const [results, setResults] = useState([]);
+  const [revealed, setRevealed] = useState([]);
+  const [pity, setPity] = useState(0);
+
+  const PULL_COST = 120;
+
+  const rollOne = (forceLegendary) => {
+    const r = Math.random();
+    let rarity;
+    if (forceLegendary) rarity = 'Legendary';
+    else if (r < 0.06) rarity = 'Legendary';
+    else if (r < 0.24) rarity = 'Rare';
+    else if (r < 0.58) rarity = 'Uncommon';
+    else rarity = 'Common';
+    const pool = CARD_POOL.filter(c => c.rarity === rarity);
+    return pick(pool.length ? pool : CARD_POOL);
+  };
+
+  const doPull = (count) => {
+    const cost = PULL_COST * count;
+    if (coins < cost || pulling) return;
+    setCoins(c => c - cost);
+    setPulling(true);
+    setResults([]);
+    setRevealed([]);
+
+    const drawn = [];
+    let p = pity;
+    for (let i = 0; i < count; i++) {
+      p++;
+      let force = false;
+      if (p >= 50) { force = true; p = 0; }
+      const card = rollOne(force);
+      if (card.rarity === 'Legendary') p = 0;
+      drawn.push(card);
+    }
+    setPity(p);
+
+    setTimeout(() => {
+      setResults(drawn);
+      setPulling(false);
+      drawn.forEach(c => addToCollection(c.id));
+    }, 700);
+  };
+
+  const revealOne = (i) => {
+    if (revealed.includes(i)) return;
+    setRevealed(r => [...r, i]);
+  };
+  const revealAll = () => setRevealed(results.map((_, i) => i));
+
+  return (
+    <div className="relative z-10 space-y-4">
+      <div className="glass rounded-2xl p-5 relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none"
+          style={{ background: 'radial-gradient(circle at 80% 0%, rgba(255,62,240,.18), transparent 60%)' }} />
+        <div className="relative flex flex-col md:flex-row items-center gap-6">
+          <div className="w-28 h-28 rounded-2xl grid place-items-center relative shrink-0 float-y"
+            style={{ border: '2px solid rgba(255,62,240,.55)', boxShadow: '0 0 50px -8px rgba(255,62,240,.9), inset 0 0 30px rgba(255,62,240,.15)' }}>
+            <Icon name="dna" size={52} className="text-fuchsia-300 rainbow" />
+          </div>
+          <div className="flex-1 text-center md:text-left">
+            <h3 className="font-display text-lg tracking-[.18em] text-fuchsia-200 mb-1">DNA EXTRACTION LAB</h3>
+            <p className="text-slate-400 text-xs font-body leading-relaxed max-w-lg">
+              Splice new specimens from the Mutagen stream. Every pull adds a card to your collection.
+              Pity counter guarantees a Legendary within 50 pulls.
+            </p>
+            <div className="flex flex-wrap items-center gap-2 mt-3 justify-center md:justify-start">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-400/10 border border-amber-400/40">
+                <Icon name="coins" size={13} className="text-amber-300" />
+                <span className="font-display font-bold text-amber-200 text-sm">{coins}</span>
+                <span className="text-[9px] text-amber-400/70 font-display tracking-wider">MUTAGEN</span>
+              </div>
+              <div className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-display text-slate-400">
+                PITY {pity}/50
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col gap-2 shrink-0">
+            <NeonButton tone="magenta" size="lg" disabled={coins < PULL_COST || pulling} onClick={() => doPull(1)}>
+              Pull ×1 · 120
+            </NeonButton>
+            <NeonButton tone="gold" size="lg" disabled={coins < PULL_COST * 10 || pulling} onClick={() => doPull(10)}>
+              Pull ×10 · 1200
+            </NeonButton>
+          </div>
+        </div>
+      </div>
+
+      {pulling && (
+        <div className="glass rounded-2xl p-10 grid place-items-center">
+          <div className="w-16 h-16 rounded-full border-2 border-fuchsia-400/40 border-t-fuchsia-300 animate-spin" />
+          <p className="mt-4 font-display text-[11px] tracking-[.3em] text-fuchsia-300 animate-pulse">EXTRACTING…</p>
+        </div>
+      )}
+
+      {results.length > 0 && !pulling && (
+        <div className="glass rounded-2xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <span className="font-display text-[11px] tracking-[.2em] text-fuchsia-200">EXTRACTION RESULTS</span>
+            <NeonButton tone="ghost" size="sm" onClick={revealAll}>Reveal All</NeonButton>
+          </div>
+          <div className="flex flex-wrap gap-3 justify-center">
+            {results.map((c, i) => {
+              const isRevealed = revealed.includes(i);
+              return (
+                <div key={i} className="relative" onClick={() => revealOne(i)}>
+                  {isRevealed ? (
+                    <div className={`card-reveal relative ${c.rarity === 'Legendary' ? 'rainbow' : ''}`}>
+                      <CardView ci={{ uid: 'g' + i, def: c, mutation: null }} size="md" />
+                      <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full font-display text-[8px] tracking-widest"
+                        style={{
+                          background: RARITY[c.rarity].color,
+                          color: '#0b0d13',
+                          boxShadow: `0 0 16px ${RARITY[c.rarity].color}`,
+                        }}>
+                        {c.rarity.toUpperCase()}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="w-[124px] h-[172px] rounded-xl grid place-items-center cursor-pointer
+                      bg-gradient-to-br from-[#1a1030] to-[#08060f] border border-fuchsia-500/40 hover:border-fuchsia-300 transition-all
+                      hover:shadow-[0_0_30px_-4px_rgba(255,62,240,.9)]">
+                      <Icon name="dna" size={30} className="text-fuchsia-500/70" />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Collection */}
+      <div className="glass rounded-2xl p-4">
+        <SectionTitle icon="flask" title="Collection" sub={`${Object.keys(collection).length} unique specimens recovered`} />
+        <div className="flex flex-wrap gap-3">
+          {CARD_POOL.map(c => {
+            const owned = collection[c.id] || 0;
+            return (
+              <div key={c.id} className="relative">
+                <CardView ci={{ uid: 'c' + c.id, def: c, mutation: null }} size="sm" dim={!owned} />
+                {owned > 0 && (
+                  <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full grid place-items-center
+                    bg-black/90 border border-amber-400/60 font-display text-[9px] text-amber-300 font-bold">
+                    {owned}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================================
+   RULEBOOK
+============================================================================ */
+const RULE_SECTIONS = [
+  {
+    id: 'goal', icon: 'trophy', title: 'The Goal in 30 Seconds',
+    body: 'Two players, 15 cards each, one goal: bring the enemy Core from 20 HP to 0 within 8 rounds. A match takes about 4 minutes.',
+    points: [
+      'Spin the Mutagen Reel each round for a free mutation.',
+      'Spend Energy to place units on your 3×3 grid.',
+      'Same-element neighbours auto-fuse into stronger units.',
+      'After both players play, units fight in the Clash.',
+      'After round 8 (or a Core at 0), the healthier Core wins.',
+    ],
+    demo: 'clash',
+  },
+  {
+    id: 'turn', icon: 'refresh', title: 'Round & Turn Structure',
+    body: 'A match has 8 rounds. In each round both players take one turn, then the Clash happens. The first mover alternates: Player A goes first in odd rounds, Player B in even rounds.',
+    points: [
+      'Upkeep — Energy refreshes, draw a card, Burn ticks.',
+      'Reel Spin — the Reel gives one Reel Charge you must inject into a Unit card in hand.',
+      'Main phase — play cards in any order.',
+      'End turn — tap End Turn or let the 20-second timer run out.',
+      'Energy on turn t = min(2 + t, 7). Unused Energy is lost.',
+    ],
+    demo: 'energy',
+  },
+  {
+    id: 'reel', icon: 'target', title: 'The Mutagen Reel',
+    body: 'Every turn the Reel rolls three slots. Together they form your Reel Charge.',
+    points: [
+      'Element — Ember, Volt, Venom, Frost (22% each), Prism (12%).',
+      'Effect — Burn, Shock, Corrode, Chill, Leech, Cleave, Plating.',
+      'Multiplier — Stable, Hardened, Sharpened, Glass Cannon, Bulwark, Overgrowth.',
+      'Resonance — matching the Reel Element to the card’s own element rounds stats up and adds one effect stack.',
+      'Bad-Beat Protection — after two Stable results in a row, your next Multiplier cannot be Stable.',
+    ],
+    demo: 'reel',
+  },
+  {
+    id: 'clash', icon: 'swords', title: 'The Clash',
+    body: 'Units fight in three strike waves: Front, then Mid, then Back. In each wave every unit in that row strikes simultaneously.',
+    points: [
+      'A striker hits the first enemy unit in its own column, scanning Front to Back.',
+      'If that column is empty, the striker hits the enemy Core instead.',
+      'Damage = ATK (after element bonus) − target Armor. Minimum 1 against a unit. Cores have no Armor.',
+      'Element advantage deals ×1.25, disadvantage deals ×0.80. Halves round up.',
+      'Dead units are removed after each wave, so later rows often find the lane open.',
+    ],
+    demo: 'clash',
+  },
+  {
+    id: 'fusion', icon: 'layers', title: 'Fusion (Auto-Merge)',
+    body: 'When you place a unit, check the four touching cells. If a friendly unit there has the same tier and a compatible element, the two merge instantly into the next tier.',
+    points: [
+      'Tier 1 + Tier 1 = Tier 2. Tier 2 + Tier 2 = Tier 3 (max).',
+      'The new unit stands in the older unit’s cell; the placed unit’s cell is freed.',
+      'If several partners qualify, the one with the most HP is chosen.',
+      'Chains up to 2 steps per placement. Hold to toggle Isolate to prevent fusion.',
+      'ATK = 0.65 × (ATK1 + ATK2), HP = 0.65 × (HP1 + HP2) + (tier − 1).',
+    ],
+    demo: 'fusion',
+  },
+  {
+    id: 'quantum', icon: 'sparkles', title: 'Quantum Cards',
+    body: 'A Quantum card cannot be mutated and cannot fuse. When it enters the battlefield it reveals its outcome.',
+    points: [
+      'Minor Disaster (15%) — hurts both sides, never lethal to a Core.',
+      'Standard (70%) — a normal unit.',
+      'Jackpot (15%) — a big swing in your favour.',
+      'The Fate Ledger smooths streaks: after a Disaster, odds shift toward Jackpot and vice-versa.',
+    ],
+    demo: 'quantum',
+  },
+  {
+    id: 'keywords', icon: 'book', title: 'Statuses & Keywords',
+    body: 'Every effect resolves at the moment of the strike unless stated otherwise.',
+    points: [
+      'Armor — reduces each hit by that amount. Corrode lowers it (down to −2, which adds damage taken).',
+      'Burn — 1 damage (ignores Armor) at the victim owner’s next 2 upkeeps.',
+      'Shock — victim skips its next strike, then is immune to Shock for 1 round.',
+      'Corrode — victim loses 1 Armor permanently.',
+      'Chill — victim loses 1 ATK (minimum 1) for 2 Clashes.',
+      'Leech — heals your Core by 1 each time the carrier hits.',
+      'Cleave — deals 50% damage (min 1) to the first enemy in the neighbouring lane.',
+      'Plating — no on-hit effect; the carrier gains +1 Armor.',
+    ],
+    demo: 'status',
+  },
+];
+
+function MiniDemo({ kind }) {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setTick(x => x + 1), 1400);
+    return () => clearInterval(t);
+  }, []);
+
+  if (kind === 'reel') {
+    const els = ['Ember', 'Volt', 'Venom', 'Frost', 'Prism'];
+    const effs = REEL_EFFECTS;
+    const muls = MULT_KEYS;
+    return (
+      <div className="grid grid-cols-3 gap-2 w-full">
+        {[
+          { v: els[tick % els.length], c: ELEM_COLOR(els[tick % els.length]) },
+          { v: effs[tick % effs.length], c: '#e879f9' },
+          { v: muls[tick % muls.length], c: '#ffcc4d' },
+        ].map((s, i) => (
+          <div key={i} className="rounded-lg py-2 text-center font-display text-[10px] pop-in"
+            style={{ background: `${s.c}18`, border: `1px solid ${s.c}55`, color: s.c }}>
+            {s.v}
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (kind === 'energy') {
+    const rows = [3, 4, 5, 6, 7, 7, 7, 7];
+    return (
+      <div className="flex items-end gap-1 h-16 w-full">
+        {rows.map((v, i) => (
+          <div key={i} className="flex-1 rounded-t transition-all duration-500"
+            style={{
+              height: `${(v / 7) * 100}%`,
+              background: i <= tick % 8 ? 'linear-gradient(180deg,#3ef0ff,#155e70)' : 'rgba(255,255,255,.07)',
+              boxShadow: i <= tick % 8 ? '0 0 12px -2px #3ef0ff' : 'none',
+            }} />
+        ))}
+      </div>
+    );
+  }
+  if (kind === 'fusion') {
+    const step = tick % 3;
+    return (
+      <div className="flex items-center justify-center gap-3 w-full py-2">
+        <div className={`w-12 h-14 rounded-lg grid place-items-center transition-all duration-500
+          ${step === 0 ? 'scale-110' : ''}`}
+          style={{ background: '#ff7a4522', border: '1px solid #ff7a4599', opacity: step >= 2 ? 0.2 : 1 }}>
+          <Icon name="flame" size={18} className="text-orange-400" />
+        </div>
+        <Icon name="plus" size={14} className="text-slate-500" />
+        <div className={`w-12 h-14 rounded-lg grid place-items-center transition-all duration-500
+          ${step === 1 ? 'scale-110' : ''}`}
+          style={{ background: '#ff7a4522', border: '1px solid #ff7a4599', opacity: step >= 2 ? 0.2 : 1 }}>
+          <Icon name="flame" size={18} className="text-orange-400" />
+        </div>
+        <Icon name="arrowRight" size={16} className={step >= 2 ? 'text-amber-300' : 'text-slate-700'} />
+        <div className={`w-14 h-16 rounded-lg grid place-items-center transition-all duration-500
+          ${step >= 2 ? 'scale-110 fuse-burst' : 'scale-90 opacity-30'}`}
+          style={{ background: '#ffcc4d22', border: '1px solid #ffcc4d99', boxShadow: step >= 2 ? '0 0 24px #ffcc4d88' : 'none' }}>
+          <div className="text-center">
+            <Icon name="flame" size={20} className="text-amber-300 mx-auto" />
+            <div className="font-display text-[8px] text-amber-200">T2</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (kind === 'clash') {
+    return (
+      <div className="space-y-1.5 w-full">
+        {['FRONT', 'MID', 'BACK'].map((r, i) => (
+          <div key={r} className="flex items-center gap-2">
+            <span className="font-display text-[8px] text-slate-500 w-10">{r}</span>
+            <div className="flex-1 h-2 rounded-full overflow-hidden bg-white/5">
+              <div className="h-full rounded-full transition-all duration-700"
+                style={{
+                  width: (tick % 3) === i ? '100%' : (tick % 3) > i ? '100%' : '0%',
+                  background: (tick % 3) >= i ? 'linear-gradient(90deg,#ff3ef0,#ff7a45)' : 'transparent',
+                  boxShadow: '0 0 12px #ff3ef0',
+                  opacity: (tick % 3) === i ? 1 : 0.35,
+                }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (kind === 'quantum') {
+    const outs = ['DISASTER', 'STANDARD', 'JACKPOT'];
+    const cols = ['#ff5a7a', '#7fe9ff', '#ffcc4d'];
+    const i = tick % 3;
+    return (
+      <div className="w-full text-center">
+        <div className="h-10 grid place-items-center">
+          <span className="font-display text-sm tracking-[.2em] pop-in" style={{ color: cols[i], textShadow: `0 0 18px ${cols[i]}` }}>
+            {outs[i]}
+          </span>
+        </div>
+        <div className="flex gap-1 mt-1">
+          {[15, 70, 15].map((w, k) => (
+            <div key={k} className="h-1.5 rounded-full flex-1" style={{ background: k === i ? cols[k] : 'rgba(255,255,255,.08)' }} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+  // status
+  const keys = ['Burn', 'Shock', 'Corrode', 'Chill', 'Leech', 'Cleave'];
+  return (
+    <div className="flex flex-wrap gap-1.5 justify-center w-full">
+      {keys.map((k, i) => (
+        <span key={k} className="px-2 py-1 rounded font-display text-[9px] transition-all duration-300"
+          style={{
+            background: tick % keys.length === i ? 'rgba(255,62,240,.25)' : 'rgba(255,255,255,.04)',
+            border: `1px solid ${tick % keys.length === i ? 'rgba(255,62,240,.8)' : 'rgba(255,255,255,.1)'}`,
+            color: tick % keys.length === i ? '#ffb3f0' : '#94a3b8',
+          }}>
+          {k}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function Rulebook() {
+  const [open, setOpen] = useState('goal');
+  return (
+    <div className="relative z-10 space-y-3">
+      {RULE_SECTIONS.map(sec => {
+        const isOpen = open === sec.id;
+        return (
+          <div key={sec.id}
+            className={`glass rounded-2xl overflow-hidden transition-all duration-300 ${isOpen ? 'ring-1 ring-cyan-400/40' : ''}`}>
+            <button onClick={() => setOpen(isOpen ? null : sec.id)}
+              className="w-full flex items-center gap-3 p-4 text-left hover:bg-white/[.03] transition">
+              <div className={`w-9 h-9 rounded-lg grid place-items-center shrink-0 transition
+                ${isOpen ? 'bg-cyan-400/20 border border-cyan-400/50 text-cyan-200' : 'bg-white/5 border border-white/10 text-slate-400'}`}>
+                <Icon name={sec.icon} size={16} />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-display text-xs tracking-[.16em] uppercase text-slate-100">{sec.title}</h3>
+              </div>
+              <Icon name="chevron" size={16}
+                className={`text-slate-500 transition-transform duration-300 ${isOpen ? 'rotate-90' : ''}`} />
+            </button>
+            <div className="overflow-hidden transition-all duration-400"
+              style={{ maxHeight: isOpen ? 520 : 0, opacity: isOpen ? 1 : 0 }}>
+              <div className="px-4 pb-4 grid grid-cols-1 md:grid-cols-[1fr_260px] gap-4">
+                <div>
+                  <p className="text-slate-300 text-sm font-body leading-relaxed mb-3">{sec.body}</p>
+                  <ul className="space-y-1.5">
+                    {sec.points.map((p, i) => (
+                      <li key={i} className="flex gap-2 text-[12.5px] font-body text-slate-400 leading-snug">
+                        <span className="text-cyan-400 mt-0.5 shrink-0"><Icon name="chevron" size={11} /></span>
+                        <span>{p}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="rounded-xl p-3 bg-black/40 border border-white/10 grid place-items-center min-h-[110px]">
+                  <MiniDemo kind={sec.demo} />
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ============================================================================
+   PVE CAMPAIGN MAP
+============================================================================ */
+const STAGES = [
+  { n: 1, name: 'Slag Fissure', boss: 'Cinder Imp', mod: 'None — tutorial stage.', hint: 'Fuse two 1-cost Ember units in Round 1 for a fast 3/6 body.' },
+  { n: 2, name: 'Static Spire', boss: 'Arc Runner', mod: 'Enemy starts with +1 Energy on odd rounds.', hint: 'Block the centre lane — Arc Runner always charges lane 2.' },
+  { n: 3, name: 'Spore Hollow', boss: 'Mire Stalker', mod: 'Venom units apply Corrode on hit.', hint: 'Keep your Armor units off the front row against Venom.' },
+  { n: 4, name: 'Rime Shelf', boss: 'Glacier Guard', mod: 'Frost units gain +1 Armor.', hint: 'Flash Lance ignores nothing — but it does punch through small HP.' },
+  { n: 5, name: 'Prism Rift', boss: 'Null Prism', mod: 'Reel Element is always Prism.', hint: 'Prism never resists — raw stats decide everything.' },
+  { n: 6, name: 'Helix Vault', boss: 'Ember Warden', mod: 'Enemy draws an extra card at Round 5.', hint: 'Save Flash Lance for the Warden; it dies to 4 damage once chipped.' },
+  { n: 7, name: 'Overload Field', boss: 'Storm Coil', mod: 'Overload begins at Round 5 instead of 7.', hint: 'Race — do not turtle. Empty lanes are free Core damage.' },
+  { n: 8, name: 'Blight Garden', boss: 'Blight Mother', mod: 'Corrode stacks twice.', hint: 'Frost walls melt under Corrode. Spread your Armor.' },
+  { n: 9, name: 'The Deep Freeze', boss: 'Cryo Behemoth', mod: 'Chill lasts 3 Clashes.', hint: 'Use Cleave mutations — splash ignores the chilled front row.' },
+  { n: 10, name: 'Mutagen Throne', boss: 'Magma Tyrant', mod: 'Boss has 26 HP and Armor 2.', hint: 'Two Tier-3 fusions in separate lanes beat one giant unit.' },
+];
+
+function CampaignMap() {
+  const [sel, setSel] = useState(null);
+  const [cleared, setCleared] = useState([1]);
+
+  const isUnlocked = n => n === 1 || cleared.includes(n - 1);
+
+  return (
+    <div className="relative z-10">
+      <div className="glass rounded-2xl p-4 mb-4">
+        <SectionTitle icon="map" title="The Mutation Lab" sub="10 stages · Elites and Bosses · the Standard Issue deck can clear every one" />
+        <div className="w-full h-1.5 rounded-full bg-white/5 overflow-hidden">
+          <div className="h-full rounded-full transition-all duration-700"
+            style={{ width: `${(cleared.length / 10) * 100}%`, background: 'linear-gradient(90deg,#3ef0ff,#ff3ef0)', boxShadow: '0 0 16px #3ef0ff' }} />
+        </div>
+        <p className="text-[10px] font-body text-slate-500 mt-1.5">{cleared.length} / 10 stages cleared</p>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {STAGES.map(s => {
+          const unlocked = isUnlocked(s.n);
+          const done = cleared.includes(s.n);
+          const isBoss = s.n % 5 === 0;
+          return (
+            <button key={s.n}
+              onClick={() => unlocked && setSel(s)}
+              className={`glass rounded-2xl p-3 text-left relative overflow-hidden transition-all duration-300
+                ${unlocked ? 'hover:-translate-y-1 hover:shadow-[0_0_30px_-8px_rgba(62,240,255,.8)]' : 'opacity-45 cursor-not-allowed'}
+                ${isBoss ? 'ring-1 ring-amber-400/50' : ''}`}>
+              <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full blur-2xl"
+                style={{ background: done ? '#22c55e55' : isBoss ? '#ffcc4d44' : '#3ef0ff33' }} />
+              <div className="relative">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-display text-[9px] tracking-[.2em] text-slate-500">STAGE</span>
+                  {done ? <Icon name="check" size={13} className="text-emerald-400" />
+                    : unlocked ? <Icon name="chevron" size={13} className="text-cyan-400" />
+                    : <Icon name="lock" size={13} className="text-slate-600" />}
+                </div>
+                <div className="font-display text-xl font-black" style={{ color: done ? '#6ee7b7' : isBoss ? '#ffcc4d' : '#7fe9ff' }}>
+                  {String(s.n).padStart(2, '0')}
+                </div>
+                <div className="font-display text-[10px] text-slate-300 mt-0.5 truncate">{s.name}</div>
+                <div className="text-[9px] font-body text-slate-500 truncate mt-0.5">{s.boss}</div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {sel && (
+        <div className="fixed inset-0 z-[70] grid place-items-center bg-black/85 backdrop-blur-md p-4"
+          onClick={() => setSel(null)}>
+          <div className="glass rounded-2xl p-6 max-w-md w-full pop-in relative overflow-hidden"
+            onClick={e => e.stopPropagation()}>
+            <div className="absolute inset-0 pointer-events-none"
+              style={{ background: 'radial-gradient(circle at 50% 0%, rgba(255,204,77,.18), transparent 65%)' }} />
+            <div className="relative">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <div className="font-display text-[9px] tracking-[.25em] text-amber-300">STAGE {String(sel.n).padStart(2, '0')}</div>
+                  <h3 className="font-display text-lg text-slate-100">{sel.name}</h3>
+                </div>
+                <button onClick={() => setSel(null)} className="text-slate-500 hover:text-slate-300">
+                  <Icon name="x" size={18} />
+                </button>
+              </div>
+              <div className="space-y-2.5 text-[12px] font-body">
+                <div className="flex gap-2">
+                  <Icon name="skull" size={14} className="text-rose-400 shrink-0 mt-0.5" />
+                  <div><span className="text-slate-500">Boss: </span><span className="text-rose-200">{sel.boss}</span></div>
+                </div>
+                <div className="flex gap-2">
+                  <Icon name="info" size={14} className="text-cyan-400 shrink-0 mt-0.5" />
+                  <div><span className="text-slate-500">Modifier: </span><span className="text-cyan-200">{sel.mod}</span></div>
+                </div>
+                <div className="flex gap-2">
+                  <Icon name="sparkles" size={14} className="text-amber-400 shrink-0 mt-0.5" />
+                  <div><span className="text-slate-500">Strategy: </span><span className="text-amber-100">{sel.hint}</span></div>
+                </div>
+              </div>
+              <div className="flex gap-2 mt-5">
+                <NeonButton tone="cyan" size="md" className="flex-1"
+                  onClick={() => { setCleared(c => c.includes(sel.n) ? c : [...c, sel.n]); setSel(null); }}>
+                  Mark Cleared
+                </NeonButton>
+                <NeonButton tone="ghost" size="md" onClick={() => setSel(null)}>Close</NeonButton>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ============================================================================
+   HERO / HUB
+============================================================================ */
+function Hero({ onPlay }) {
+  return (
+    <div className="relative z-10 glass rounded-3xl p-6 md:p-10 overflow-hidden mb-5">
+      <div className="absolute inset-0 pointer-events-none"
+        style={{ background: 'radial-gradient(circle at 20% 20%, rgba(62,240,255,.16), transparent 55%), radial-gradient(circle at 85% 80%, rgba(255,62,240,.16), transparent 55%)' }} />
+      <div className="relative flex flex-col md:flex-row items-center gap-8">
+        <div className="flex-1 text-center md:text-left">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-400/10 border border-cyan-400/30 mb-4">
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+            <span className="font-display text-[9px] tracking-[.3em] text-cyan-300">TACTICAL CARD GAME · WEB SIMULATOR</span>
+          </div>
+          <h1 className="font-display text-3xl md:text-5xl font-black tracking-[.08em] leading-none mb-3">
+            <span className="text-glow-cy text-cyan-200">MUTAGEN</span>{' '}
+            <span className="text-glow-mg text-fuchsia-300">SHIFT</span>
+          </h1>
+          <p className="font-display text-[11px] tracking-[.35em] text-slate-500 mb-4">CARDS OF FATE</p>
+          <p className="text-slate-400 font-body text-sm leading-relaxed max-w-lg mb-6">
+            Spin the Mutagen Reel. Inject volatile mutations. Fuse same-element units into Tier-3 monsters.
+            Bring the enemy Core from 20 to 0 in eight rounds — or die trying.
+          </p>
+          <div className="flex flex-wrap gap-3 justify-center md:justify-start">
+            <NeonButton tone="cyan" size="lg" onClick={onPlay}>
+              <span className="flex items-center gap-2"><Icon name="play" size={13} />Enter the Arena</span>
+            </NeonButton>
+          </div>
+        </div>
+        <div className="relative shrink-0">
+          <div className="flex gap-2 float-y">
+            {['cinder-imp', 'static-sprite', 'rime-pup'].map((id, i) => (
+              <div key={id} style={{ transform: `rotate(${(i - 1) * 7}deg) translateY(${Math.abs(i - 1) * 10}px)` }}>
+                <CardView ci={{ uid: 'hero' + id, def: CARD_BY_ID[id], mutation: i === 1 ? { element: 'Volt', effect: 'Shock', mult: 'Sharpened' } : null }} size="md" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================================
+   APP
+============================================================================ */
+function App() {
+  const [tab, setTab] = useState('battle');
+  const [deck, setDeck] = useState(STANDARD_DECK.slice());
+  const [coins, setCoins] = useState(1200);
+  const [collection, setCollection] = useState({});
+
+  const addToCollection = useCallback(id => {
+    setCollection(c => ({ ...c, [id]: (c[id] || 0) + 1 }));
+  }, []);
+
+  const particles = useMemo(() => Array.from({ length: 26 }, (_, i) => ({
+    id: i,
+    left: Math.random() * 100,
+    delay: Math.random() * 18,
+    dur: 14 + Math.random() * 16,
+    size: 1 + Math.random() * 2.4,
+    color: ['#3ef0ff', '#ff3ef0', '#ffcc4d'][i % 3],
+  })), []);
+
+  const TABS = [
+    { id: 'battle', label: 'Battle', icon: 'swords' },
+    { id: 'deck', label: 'Deck', icon: 'layers' },
+    { id: 'lab', label: 'DNA Lab', icon: 'flask' },
+    { id: 'rules', label: 'Rules', icon: 'book' },
+    { id: 'campaign', label: 'Campaign', icon: 'map' },
+  ];
+
+  return (
+    <div className="min-h-screen relative">
+      {/* ambient particles */}
+      <div className="particles">
+        {particles.map(p => (
+          <span key={p.id} className="particle"
+            style={{
+              left: `${p.left}%`, bottom: '-10px',
+              width: p.size, height: p.size,
+              background: p.color, color: p.color,
+              animationDelay: `${p.delay}s`,
+              animationDuration: `${p.dur}s`,
+            }} />
+        ))}
+      </div>
+
+      {/* NAV */}
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#0d0e12]/80 border-b border-white/10">
+        <div className="max-w-[1500px] mx-auto px-3 sm:px-5 py-2.5 flex items-center gap-3">
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="w-8 h-8 rounded-lg grid place-items-center"
+              style={{ background: 'linear-gradient(135deg,#3ef0ff22,#ff3ef022)', border: '1px solid rgba(62,240,255,.4)' }}>
+              <Icon name="dna" size={16} className="text-cyan-300" />
+            </div>
+            <div className="hidden sm:block">
+              <div className="font-display text-[11px] tracking-[.2em] text-slate-200 leading-none">MUTAGEN SHIFT</div>
+              <div className="font-display text-[7px] tracking-[.3em] text-slate-600">CARDS OF FATE</div>
+            </div>
+          </div>
+
+          <nav className="flex-1 flex items-center gap-1 overflow-x-auto no-scrollbar">
+            {TABS.map(t => (
+              <button key={t.id} onClick={() => setTab(t.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-display text-[10px] tracking-[.14em] uppercase whitespace-nowrap transition-all
+                  ${tab === t.id ? 'tab-active' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}>
+                <Icon name={t.icon} size={12} />{t.label}
+              </button>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-400/10 border border-amber-400/30 shrink-0">
+            <Icon name="coins" size={12} className="text-amber-300" />
+            <span className="font-display font-bold text-[11px] text-amber-200">{coins}</span>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-[1500px] mx-auto px-3 sm:px-5 py-4 pb-16">
+        {tab === 'battle' && (
+          <>
+            <Hero onPlay={() => {}} />
+            <BattleScreen deckIds={deck} onExit={() => setTab('deck')} />
+          </>
+        )}
+        {tab === 'deck' && <DeckBuilder deck={deck} setDeck={setDeck} />}
+        {tab === 'lab' && (
+          <DnaLab coins={coins} setCoins={setCoins} collection={collection} addToCollection={addToCollection} />
+        )}
+        {tab === 'rules' && <Rulebook />}
+        {tab === 'campaign' && <CampaignMap />}
+      </main>
+
+      <footer className="border-t border-white/5 py-4 text-center">
+        <p className="font-display text-[8px] tracking-[.3em] text-slate-700">
+          MUTAGEN SHIFT · CARDS OF FATE · INTERACTIVE SIMULATOR
+        </p>
+      </footer>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
